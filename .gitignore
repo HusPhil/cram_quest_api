@@ -1,0 +1,37 @@
+# Ignore Python cache files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore virtual environment
+venv/
+.env/
+
+# Ignore SQLite database files
+*.db
+*.sqlite3
+
+# Ignore logs
+logs/
+*.log
+
+# Ignore environment variables
+.env
+*.env
+
+# Ignore IDE/editor-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore compiled dependencies
+*.egg-info/
+dist/
+build/
+
+# Ignore coverage reports
+htmlcov/
+.coverage
+*.cover
