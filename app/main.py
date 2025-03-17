@@ -1,19 +1,28 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.database import create_db_and_tables
-from app.api.v1.endpoints import user_routes
+from app.api.v1.endpoints import user_routes, player_routes
+
+
+    
+app = FastAPI(title="CramQuest API", version="1.0.0")
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    print("Starting up cramquest...")
     create_db_and_tables()  # Run database initialization
     yield  # Let the app run
     # Cleanup (if needed) goes here
 
-app = FastAPI(title="CramQuest API", version="1.0.0")
+@app.on_event("startup")
+def on_startup():
+    print("Starting up cramquest...")
+    create_db_and_tables()  # Automatically create missing tables
 
 @app.get('/')
 async def root():
     return {"message": "Server is running!"}
 
 app.include_router(user_routes.router, prefix="/users", tags=["users"])
+app.include_router(player_routes.router, prefix="/players", tags=["players"])

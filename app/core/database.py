@@ -8,6 +8,7 @@ engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread":
 def get_session():
     with Session(engine) as session:
         yield session
+    
 
 # Function to create tables
 def create_db_and_tables():
