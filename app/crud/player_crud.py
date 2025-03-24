@@ -26,7 +26,7 @@ def get_player_with_user(session: Session, player_id: int) -> PlayerRead:
     result = session.exec(statement).first()
 
     if not result:
-        return None  # ✅ Return None if player does not exist
+        raise ValueError(f"Player with ID {player_id} not found.") # ✅ Return None if player does not exist
 
     user, player = result  # ✅ Unpack user and player correctly
 
@@ -39,7 +39,6 @@ def get_player_with_user(session: Session, player_id: int) -> PlayerRead:
         experience=player.experience
     )
 
-
 def get_all_players_with_users(session: Session) -> List[PlayerRead]:
     """Fetch all players along with their associated user data."""
     statement = (
@@ -49,10 +48,8 @@ def get_all_players_with_users(session: Session) -> List[PlayerRead]:
     results = session.exec(statement).all() # Returns a list of tuples (User, Player)
 
     if not results:
-        return []  # Return an empty list instead of None
+        raise ValueError("No players found.")
     
-    print(results)
-
     players_with_users = [
         PlayerRead(  # Create PlayerRead
             id=player.id,
