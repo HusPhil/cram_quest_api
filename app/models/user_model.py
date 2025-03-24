@@ -1,8 +1,9 @@
+from typing import Optional
 from sqlmodel import Field
 from app.models.base import Base  # Inherit from Base
 
 class User(Base, table=True):
-    id: int | None = Field(default=None, primary_key=True)
-    username: str
-    email: str
+    id: Optional[int] = Field(default=None, primary_key=True)
+    username: str = Field(unique=True, index=True)
+    email: str = Field(unique=True, index=True)
     password: str

@@ -10,11 +10,20 @@ class UserNotFound(HTTPException):
     def __init__(self):
         super().__init__(status_code=404, detail="User not found")
 
+class UserAlreadyExists(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=400, detail="User already exists")
+
 def crud_create_user(session: Session, username: str, email: str, password: str) -> UserRead:
     
-    hashed_password = Security.hash_string(password)
+    existing_user = session.exec(
+        select(User.id).where((User.username == username) | (User.email == email))
+    ).first()
 
-    print(hashed_password)
+    if existing_user:
+        raise UserAlreadyExists
+
+    hashed_password = Security.hash_string(password)
 
     db_user = User(
         username=username, 
@@ -32,40 +41,7 @@ def crud_create_user(session: Session, username: str, email: str, password: str)
         email=db_user.email
     )
 
-def crud_update_user(session: Session, user_id: int, username: str, email: str, password: Optional[str]) -> UserRead:
-    user = session.get(User, user_id)
-
-    if not user:
-        raise UserNotFound 
-    
-    update_data = {
-        "username": username,
-        "email": email
-    }
-
-    if password:
-        update_data["password"] = Security.hash_string(password)
-
-    try:
-        for key, value in update_data.items():
-            setattr(user, key, value)
-
-        session.commit()
-        session.refresh(user)
-
-        return UserRead(
-            id=user.id,
-            username=user.username,        
-            email=user.email
-        )
-        
-    except IntegrityError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
-
-
-def crud_read_user(session: Session, user_id: int) -> UserRead:
+def crud_read_user_by_id(session: Session, user_id: int) -> UserRead:
     user = session.get(User, user_id)
 
     if not user:
@@ -86,7 +62,6 @@ def crud_read_user_by_username(session: Session, username: str) -> User:
 
     return user
 
-
 def crud_read_all_users(session: Session) -> list[UserRead]:
     users = session.exec(select(User)).all()
     return [
@@ -97,3 +72,68 @@ def crud_read_all_users(session: Session) -> list[UserRead]:
         )
         for user in users
     ]
+
+def crud_update_user(session: Session, user_id: int, username: str, email: str, password: Optional[str]) -> UserRead:
+    user = session.get(User, user_id)
+
+    if not user:
+        raise UserNotFound
+    
+    # 🔍 Check if another user has the same username/email
+    existing_user = session.exec(
+        select(User).where(
+            ((User.username == username) | (User.email == email)) & (User.id != user_id)
+        )
+    ).first()
+
+    if existing_user:
+        raise UserAlreadyExists  # ❌ Prevents duplicate usernames/emails
+    
+    if not (username or email or password):
+        return UserRead(
+            id=user.id,
+            username=user.username,
+            email=user.email
+        )
+
+    update_data = {
+        "username": username,
+        "email": email
+    }
+
+    if password:
+        print("this has been called")
+        update_data["password"] = Security.hash_string(password)
+
+    try:
+        for key, value in update_data.items():
+            setattr(user, key, value)
+
+        session.commit()
+        session.refresh(user)
+
+        return UserRead(
+            id=user.id,
+            username=user.username,        
+            email=user.email
+        )
+        
+    except IntegrityError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+def crud_delete_user(session: Session, user_id: int) -> UserRead:
+    user = session.get(User, user_id)
+
+    if not user:
+        raise UserNotFound
+
+    session.delete(user)
+    session.commit()
+
+    return UserRead(
+        id=user.id,
+        username=user.username,
+        email=user.email
+    )
