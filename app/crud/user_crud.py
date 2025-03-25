@@ -79,31 +79,27 @@ def crud_update_user(session: Session, user_id: int, username: str, email: str, 
     if not user:
         raise UserNotFound
     
-    # 🔍 Check if another user has the same username/email
-    existing_user = session.exec(
-        select(User).where(
-            ((User.username == username) | (User.email == email)) & (User.id != user_id)
-        )
-    ).first()
+    if username or email:
+        existing_user = session.exec(
+            select(User).where(
+                ((User.username == username) | (User.email == email)) & (User.id != user_id)
+            )
+        ).first()
 
-    if existing_user:
-        raise UserAlreadyExists  # ❌ Prevents duplicate usernames/emails
-    
-    if not (username or email or password):
-        return UserRead(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
+        if existing_user:
+            raise UserAlreadyExists  # ❌ Prevents duplicate usernames/emails
 
-    update_data = {
-        "username": username,
-        "email": email
-    }
+    update_data = {}
 
+    if username is not None:
+        update_data["username"] = username
+    if email is not None:
+        update_data["email"] = email
     if password:
-        print("this has been called")
         update_data["password"] = Security.hash_string(password)
+
+    if not update_data:
+        return UserRead(id=user.id, username=user.username, email=user.email)    
 
     try:
         for key, value in update_data.items():
@@ -119,8 +115,10 @@ def crud_update_user(session: Session, user_id: int, username: str, email: str, 
         )
         
     except IntegrityError as e:
+        session.rollback()
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        session.rollback()
         raise HTTPException(status_code=400, detail=str(e))
 
 def crud_delete_user(session: Session, user_id: int) -> UserRead:

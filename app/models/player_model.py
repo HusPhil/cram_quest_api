@@ -18,8 +18,12 @@ class PlayerTitle(str, Enum):
 class Player(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", unique=True)
-    title: int = Field(default=1)
-    level: PlayerTitle = Field(sa_column=Column(String, nullable=False))
+
+    title: PlayerTitle = Field(
+        sa_column=Column(String, nullable=False), default=PlayerTitle.NOVICE 
+    )
+    level: int = Field(default=1)  
     experience: int = Field(default=0)
 
-    user: "User" = Relationship(back_populates="player")  # ✅ Ensures bidirectional link
+    user: "User" = Relationship(back_populates="player") 
+

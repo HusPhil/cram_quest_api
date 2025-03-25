@@ -1,17 +1,18 @@
 from typing import Annotated
-from pydantic import BaseModel, EmailStr, SecretStr, Field
+from typing import Optional
+from pydantic import EmailStr, SecretStr, Field, BaseModel
 
-class UserCreate(BaseModel):
+class UserBase(BaseModel):
     username: str = Field(..., min_length=3, strip_whitespace=True)
     email: EmailStr
+
+class UserRead(UserBase):
+    id: int
+
+class UserCreate(UserBase):
     password: SecretStr
 
-class UserRead(BaseModel):
-    id: int
-    username: str
-    email: str
-
-# class UserUpdate(BaseModel):
-#     username: Annotated[str, Field(..., min_length=3, strip_whitespace=True)]   
-#     email: EmailStr
-#     password: SecretStr
+class UserUpdate(BaseModel):  # ✅ Schema for updating users (all fields optional)
+    username: Optional[str] = None
+    email: Optional[EmailStr] = None
+    password: Optional[SecretStr] = None
