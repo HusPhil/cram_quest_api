@@ -13,5 +13,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_file = ".env"  # Load environment variables
+        
 
 settings = Settings()
