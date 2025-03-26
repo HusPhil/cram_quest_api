@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from app.models.player_model import PlayerTitle
 from typing import Optional
 
@@ -8,7 +8,7 @@ class PlayerBase(BaseModel):
     experience:int
 
 class PlayerCreate(BaseModel):
-    title: Optional[PlayerTitle] = PlayerTitle.NOVICE 
+    title: PlayerTitle = Field(default=PlayerTitle.NOVICE, description="Choose a player title")
     level: Optional[int] = 1
     experience: Optional[int] = 0
 
