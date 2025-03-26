@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 from sqlmodel import Session
 from fastapi import HTTPException
 from app.models.player_model import Player
-from app.schemas.profile_schema import ProfileRead
+from app.schemas.profile_schema import ProfileRead, ProfileUpdate
 from app.models.profile_model import Profile
 from app.crud.player_crud import PlayerNotFound
 from sqlalchemy.orm import joinedload, selectinload
@@ -37,7 +37,7 @@ def crud_create_profile(session: Session, player_id: int, avatar_url: str, bio: 
 
     return profile
 
-def crud_read_profile_with_user(session: Session, profile_id: int) -> ProfileRead:
+def crud_read_profile(session: Session, profile_id: int) -> ProfileRead:
     statement = (
         select(Profile)
         .where(Profile.id == profile_id)
@@ -57,7 +57,7 @@ def crud_read_profile_with_user(session: Session, profile_id: int) -> ProfileRea
         mood=profile.mood
     )
 
-def crud_read_all_profiles_with_users(session: Session) -> list[ProfileRead]:
+def crud_read_all_profiles(session: Session) -> list[ProfileRead]:
     statement = (
         select(Profile)
         .options(joinedload(Profile.player))
@@ -80,3 +80,49 @@ def crud_read_all_profiles_with_users(session: Session) -> list[ProfileRead]:
     ]
 
     return profiles_with_users
+
+def crud_update_profile(session: Session, profile_id: int, profile_update: ProfileUpdate) -> ProfileRead:
+    """Update a Profile while allowing partial updates."""
+
+    profile = session.get(Profile, profile_id)
+
+    if not profile:
+        raise ProfileNotFound(profile_id)
+
+    updated_data = {}
+
+    if profile_update.avatar_url is not None:
+        updated_data["avatar_url"] = profile_update.avatar_url
+
+    if profile_update.bio is not None:
+        updated_data["bio"] = profile_update.bio
+
+    if profile_update.mood is not None:
+        updated_data["mood"] = profile_update.mood
+
+    if not updated_data:
+        raise ProfileRead(
+            id=profile.id,
+            player_id=profile.player.id,
+            avatar_url=profile.avatar_url,
+            bio=profile.bio,
+            mood=profile.mood
+        )
+
+    try:
+        for key, value in updated_data.items():
+            setattr(profile, key, value)
+        session.commit()
+        session.refresh(profile)
+
+        return ProfileRead(
+            id=profile.id,
+            player_id=profile.player.id,
+            avatar_url=profile.avatar_url,
+            bio=profile.bio,
+            mood=profile.mood
+        )
+    
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=400, detail=f"Error updating profile: {e}")

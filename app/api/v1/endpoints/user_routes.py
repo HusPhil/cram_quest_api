@@ -14,13 +14,9 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
     return crud_create_user(session, user.username, user.email, user.password.get_secret_value())
 
 @router.patch("/{user_id}", response_model=UserRead)
-def update_user(user_id: int,update_user: UserUpdate, session: Session = Depends(get_session)):
-    decoded_password = update_user.password.get_secret_value() if update_user.password else None
+def update_user(user_id: int, user_update: UserUpdate, session: Session = Depends(get_session)):
 
-    return crud_update_user(
-        session, user_id, update_user.username, 
-        update_user.email, decoded_password
-    )
+    return crud_update_user(session, user_id, user_update)
 
 @router.get("/{user_id}", response_model=UserRead)
 def read_user(user_id: int, session: Session = Depends(get_session)):
