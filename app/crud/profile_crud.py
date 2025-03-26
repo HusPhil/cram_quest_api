@@ -5,18 +5,31 @@ from app.models.player_model import Player
 from app.schemas.profile_schema import ProfileRead
 from app.models.profile_model import Profile
 from app.crud.player_crud import PlayerNotFound
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 
 class ProfileNotFound(HTTPException):
     def __init__(self, profile_id: int):
         super().__init__(status_code=404, detail=f"Profile {profile_id} not found")
 
+class ProfileAlreadyExist(HTTPException):
+    def __init__(self, player_id: int):
+        super().__init__(status_code=400, detail=f"Profile already exists for player: {player_id}")
+
 def crud_create_profile(session: Session, player_id: int, avatar_url: str, bio: str, mood: str):
-    player = session.get(Player, player_id)
+    statement = (
+        select(Player)
+        .where(Player.id == player_id)
+        .options(selectinload(Player.profile))
+    )
+
+    player = session.exec(statement).first()
 
     if not player:
         raise PlayerNotFound(player_id)
     
+    if player.profile:
+        raise ProfileAlreadyExist(player_id)
+
     profile = Profile(player_id=player_id, avatar_url=avatar_url, bio=bio, mood=mood)
     session.add(profile)    
     session.commit()

@@ -6,7 +6,7 @@ from app.models.player_model import Player
 from app.schemas.player_schema import PlayerRead
 from app.models.user_model import User
 from app.crud.user_crud import UserNotFound
-from sqlalchemy.orm import joinedload
+from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import IntegrityError
 
 class PlayerNotFound(HTTPException):
@@ -20,14 +20,19 @@ class PlayerAlreadyExist(HTTPException):
 def crud_create_player(session: Session, user_id: int, title: str = "Noobie", level: int = 1, experience: int = 0) -> Player:
     """Create a Player associated with a User, ensuring 1:1 relationship."""
     
-    # 🔍 Ensure the User exists
-    user = session.get(User, user_id)
-    if not user:
-        raise UserNotFound
+    # ✅ Perform a single query to check both User existence & Player existence
+    statement = (
+        select(User)
+        .where(User.id == user_id)
+        .options(selectinload(User.player))
+    )
 
-    # 🚫 Prevent duplicate Player entries for the same User (Enforce 1:1)
-    existing_player = session.exec(select(Player).where(Player.user_id == user_id)).first()
-    if existing_player:
+    user = session.exec(statement).first()
+
+    if not user:
+        raise UserNotFound(f"User with ID {user_id} not found.")
+
+    if user.player:  # ✅ Check if Player already exists
         raise PlayerAlreadyExist(user_id)
 
     # ✅ Create and persist the Player
@@ -37,10 +42,12 @@ def crud_create_player(session: Session, user_id: int, title: str = "Noobie", le
         session.commit()
         session.refresh(db_player)
         return db_player
-
     except IntegrityError as e:
         session.rollback()
         raise ValueError(f"Database error: {str(e)}")
+    except Exception as e:
+        session.rollback()
+        raise RuntimeError(f"Unexpected error while creating Player: {str(e)}")
     
 def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
     """Fetch a player along with their associated user data."""
