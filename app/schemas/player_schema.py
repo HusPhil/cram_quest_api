@@ -1,16 +1,20 @@
 from pydantic import BaseModel
+from app.models.player_model import PlayerTitle
 from typing import Optional
 
+class PlayerBase(BaseModel):
+    title: PlayerTitle 
+    level: int 
+    experience:int
+
 class PlayerCreate(BaseModel):
-    id: int
-    title: Optional[str] = "Noobie" 
+    title: Optional[PlayerTitle] = PlayerTitle.NOVICE 
     level: Optional[int] = 1
     experience: Optional[int] = 0
 
-class PlayerRead(BaseModel):
+class PlayerRead(PlayerBase):
     id: int
     username: str
     email: str
-    title: str
-    level: int
-    experience: int
+
+

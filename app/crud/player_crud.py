@@ -1,5 +1,6 @@
 from sqlmodel import Session, select
 from typing import List
+from fastapi import HTTPException
 from sqlmodel import Session
 from app.models.player_model import Player
 from app.schemas.player_schema import PlayerRead
@@ -8,9 +9,13 @@ from app.crud.user_crud import UserNotFound
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
 
-class PlayerNotFound(Exception):
-    def __init__(self):
-        super().__init__(status_code=404, detail="Player not found")
+class PlayerNotFound(HTTPException):
+    def __init__(self, player_id: int):
+        super().__init__(status_code=404, detail=f"Player {player_id} not found")
+
+class PlayerAlreadyExist(HTTPException):
+    def __init__(self, user_id: int):
+        super().__init__(status_code=404, detail=f"Player already exists for user: {user_id}")
 
 def crud_create_player(session: Session, user_id: int, title: str = "Noobie", level: int = 1, experience: int = 0) -> Player:
     """Create a Player associated with a User, ensuring 1:1 relationship."""
@@ -23,7 +28,7 @@ def crud_create_player(session: Session, user_id: int, title: str = "Noobie", le
     # 🚫 Prevent duplicate Player entries for the same User (Enforce 1:1)
     existing_player = session.exec(select(Player).where(Player.user_id == user_id)).first()
     if existing_player:
-        raise PlayerNotFound
+        raise PlayerAlreadyExist(user_id)
 
     # ✅ Create and persist the Player
     try:
@@ -48,7 +53,7 @@ def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
     player = session.exec(statement).first()
 
     if not player:
-        raise ValueError(f"Player with ID {player_id} not found.") # ✅ Return None if player does not exist
+        raise PlayerNotFound(player_id)
     
     user = player.user
 
