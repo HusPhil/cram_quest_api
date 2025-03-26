@@ -6,6 +6,7 @@ from app.schemas.profile_schema import ProfileRead, ProfileUpdate
 from app.models.profile_model import Profile
 from app.crud.player_crud import PlayerNotFound
 from sqlalchemy.orm import joinedload, selectinload
+from sqlalchemy.exc import SQLAlchemyError
 
 class ProfileNotFound(HTTPException):
     def __init__(self, profile_id: int):
@@ -15,7 +16,7 @@ class ProfileAlreadyExist(HTTPException):
     def __init__(self, player_id: int):
         super().__init__(status_code=400, detail=f"Profile already exists for player: {player_id}")
 
-def crud_create_profile(session: Session, player_id: int, avatar_url: str, bio: str, mood: str):
+def crud_create_profile(session: Session, player_id: int, avatar_url: str, bio: str, mood: str) -> ProfileRead:
     statement = (
         select(Player)
         .where(Player.id == player_id)
@@ -35,7 +36,13 @@ def crud_create_profile(session: Session, player_id: int, avatar_url: str, bio: 
     session.commit()
     session.refresh(profile)
 
-    return profile
+    return ProfileRead(
+        id=profile.id,
+        player_id=profile.player.id,
+        avatar_url=profile.avatar_url,
+        bio=profile.bio,
+        mood=profile.mood
+    )
 
 def crud_read_profile(session: Session, profile_id: int) -> ProfileRead:
     statement = (
@@ -123,6 +130,10 @@ def crud_update_profile(session: Session, profile_id: int, profile_update: Profi
             mood=profile.mood
         )
     
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise HTTPException(status_code=400, detail=f"Error updating profile: {e}")
+
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=400, detail=f"Error updating profile: {e}")

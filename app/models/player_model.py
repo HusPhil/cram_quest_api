@@ -6,6 +6,7 @@ from enum import Enum
 if TYPE_CHECKING:
     from app.models.user_model import User  # ✅ Import only for type hints
     from app.models.profile_model import Profile
+    from app.models.subject_model import Subject
 
 class PlayerTitle(str, Enum):
     NOVICE = "Novice"
@@ -28,5 +29,6 @@ class Player(SQLModel, table=True):
     experience: int = Field(default=0)
 
     profile: Optional["Profile"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})  
+    subjects: list["Subject"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})
     user: "User" = Relationship(back_populates="player") 
 
