@@ -3,7 +3,7 @@ from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.models.user_model import User
 from app.core.security import Security
-from app.schemas.user_schema import UserRead
+from app.schemas.user_schema import UserRead, UserUpdate
 from typing import Optional
 
 class UserNotFound(HTTPException):
@@ -73,33 +73,38 @@ def crud_read_all_users(session: Session) -> list[UserRead]:
         for user in users
     ]
 
-def crud_update_user(session: Session, user_id: int, username: str, email: str, password: Optional[str]) -> UserRead:
-    user = session.get(User, user_id)
+def crud_update_user(session: Session, user_id: int, user_update: UserUpdate) -> UserRead:
+    """Update a User while preventing duplicate usernames/emails and ensuring partial updates."""
+    
+    # ✅ Fetch the User and Check for Duplicates in ONE Query
+    statement = (
+        select(User)
+        .where((User.id == user_id) | (((User.username == user_update.username) | (User.email == user_update.email)) & (User.id != user_id)))
+    )
+
+    results = session.exec(statement).all()  # ✅ Only ONE database call
+
+    # ✅ Extract User & Potential Duplicate from the same result set
+    user = next((row for row in results if row.id == user_id), None)
+    existing_user = next((row for row in results if row.id != user_id), None)
 
     if not user:
-        raise UserNotFound
-    
-    if username or email:
-        existing_user = session.exec(
-            select(User).where(
-                ((User.username == username) | (User.email == email)) & (User.id != user_id)
-            )
-        ).first()
+        raise UserNotFound(f"User with ID {user_id} not found.")
 
-        if existing_user:
-            raise UserAlreadyExists  # ❌ Prevents duplicate usernames/emails
+    if existing_user:
+        raise UserAlreadyExists(f"Username or email already in use by another user.")
 
     update_data = {}
 
-    if username is not None:
-        update_data["username"] = username
-    if email is not None:
-        update_data["email"] = email
-    if password:
-        update_data["password"] = Security.hash_string(password)
+    if user_update.username is not None:
+        update_data["username"] = user_update.username
+    if user_update.email is not None:
+        update_data["email"] = user_update.email
+    if user_update.password:
+        update_data["password"] = Security.hash_string(user_update.password.get_secret_value())
 
     if not update_data:
-        return UserRead(id=user.id, username=user.username, email=user.email)    
+        return UserRead(id=user.id, username=user.username, email=user.email)  # ✅ No Updates, Return Existing Data
 
     try:
         for key, value in update_data.items():
@@ -108,19 +113,14 @@ def crud_update_user(session: Session, user_id: int, username: str, email: str, 
         session.commit()
         session.refresh(user)
 
-        return UserRead(
-            id=user.id,
-            username=user.username,        
-            email=user.email
-        )
-        
+        return UserRead(id=user.id, username=user.username, email=user.email)  # ✅ Single Return Statement
+
     except IntegrityError as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=f"Integrity error: {str(e)}")
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
-
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 def crud_delete_user(session: Session, user_id: int) -> UserRead:
     try:

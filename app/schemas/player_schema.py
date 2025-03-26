@@ -14,7 +14,6 @@ class PlayerCreate(BaseModel):
 
 class PlayerRead(PlayerBase):
     id: int
-    username: str
-    email: str
+    user_id: int
 
 

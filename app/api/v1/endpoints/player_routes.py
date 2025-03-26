@@ -10,7 +10,7 @@ from app.models.player_model import PlayerTitle
 # router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 router = APIRouter()
 
-@router.post("/{user_id}", response_model=PlayerCreate)
+@router.post("/{user_id}", response_model=PlayerRead)
 def create_player(user_id: int, player: PlayerCreate, session: Session = Depends(get_session)):
     return crud_create_player(session, user_id, player.title, player.level, player.experience)
 
