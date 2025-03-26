@@ -62,8 +62,7 @@ def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
     
     return PlayerRead(
         id=player.id,
-        username=user.username,
-        email=user.email,
+        user_id=user.id,
         title=player.title,
         level=player.level,
         experience=player.experience
@@ -81,10 +80,9 @@ def crud_read_all_players_with_users(session: Session) -> List[PlayerRead]:
         raise ValueError("No players found.")
     
     players_with_users = [
-        PlayerRead(  # Create PlayerRead
+        PlayerRead(
             id=player.id,
-            username=player.user.username,
-            email=player.user.email,
+            user_id=player.user.id,
             title=player.title,
             level=player.level,
             experience=player.experience
