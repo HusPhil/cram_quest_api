@@ -5,6 +5,7 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from app.models.user_model import User  # ✅ Import only for type hints
+    from app.models.profile_model import Profile
 
 class PlayerTitle(str, Enum):
     NOVICE = "Novice"
@@ -17,13 +18,15 @@ class PlayerTitle(str, Enum):
 
 class Player(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(sa_column=Column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True))
-
+    user_id: int = Field(
+        sa_column=Column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    )
     title: PlayerTitle = Field(
         sa_column=Column(String, nullable=False), default=PlayerTitle.NOVICE 
     )
     level: int = Field(default=1)  
     experience: int = Field(default=0)
 
+    profile: Optional["Profile"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})  
     user: "User" = Relationship(back_populates="player") 
 

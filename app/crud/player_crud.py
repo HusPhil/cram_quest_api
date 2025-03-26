@@ -47,7 +47,7 @@ def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
     statement = (
         select(Player)
         .where(Player.id == player_id)
-        .options(joinedload(Player.user))  # ✅ Automatically load the related User object
+        .options(joinedload(Player.user))
     )
     
     player = session.exec(statement).first()
@@ -58,7 +58,7 @@ def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
     user = player.user
 
     if not user:
-        raise ValueError(f"User for player with ID {player_id} not found.") # ✅ Return None if user does not exist
+        raise ValueError(f"User for player with ID {player_id} not found.") 
     
     return PlayerRead(
         id=player.id,
@@ -73,7 +73,7 @@ def crud_read_all_players_with_users(session: Session) -> List[PlayerRead]:
     """Fetch all players along with their associated user data."""
     statement = (
         select(Player)
-        .options(joinedload(Player.user))  # ✅ Automatically load the related User object
+        .options(joinedload(Player.user))  
     )
     players = session.exec(statement).all() # Returns a list of tuples (User, Player)
 
