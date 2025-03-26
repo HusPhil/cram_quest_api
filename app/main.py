@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 from app.core.database import create_db_and_tables
-from app.api.v1.endpoints import user_routes, player_routes, auth_routes
+from app.api.v1.endpoints import user_routes, player_routes, auth_routes, test_routes
 
 
     
@@ -27,3 +27,4 @@ async def root():
 app.include_router(user_routes.router, prefix="/users", tags=["users"])
 app.include_router(player_routes.router, prefix="/players", tags=["players"])
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
+app.include_router(test_routes.router, prefix="/tests", tags=["tests"])

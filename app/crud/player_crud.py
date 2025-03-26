@@ -5,19 +5,33 @@ from app.models.player_model import Player
 from app.schemas.player_schema import PlayerRead
 from app.models.user_model import User
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import IntegrityError
 
-def crud_create_player(session: Session, id: int, title: str = "Noobie", level: int = 1, experience: int = 0) -> Player:
-    user = session.get(User, id)
-    if not user:
-        raise ValueError(f"User with ID {id} not found.")
-
-    db_player = Player(user_id=user.id, title=title, level=level, experience=experience)
+def crud_create_player(session: Session, user_id: int, title: str = "Noobie", level: int = 1, experience: int = 0) -> Player:
+    """Create a Player associated with a User, ensuring 1:1 relationship."""
     
-    session.add(db_player)
-    session.commit()
-    session.refresh(db_player)
-    return db_player
+    # 🔍 Ensure the User exists
+    user = session.get(User, user_id)
+    if not user:
+        raise ValueError(f"User with ID {user_id} not found.")
 
+    # 🚫 Prevent duplicate Player entries for the same User (Enforce 1:1)
+    existing_player = session.exec(select(Player).where(Player.user_id == user_id)).first()
+    if existing_player:
+        raise ValueError(f"Player for User ID {user_id} already exists.")
+
+    # ✅ Create and persist the Player
+    try:
+        db_player = Player(user_id=user.id, title=title, level=level, experience=experience)
+        session.add(db_player)
+        session.commit()
+        session.refresh(db_player)
+        return db_player
+
+    except IntegrityError as e:
+        session.rollback()
+        raise ValueError(f"Database error: {str(e)}")
+    
 def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
     """Fetch a player along with their associated user data."""
     statement = (
@@ -48,24 +62,24 @@ def crud_read_player_with_user(session: Session, player_id: int) -> PlayerRead:
 def crud_read_all_players_with_users(session: Session) -> List[PlayerRead]:
     """Fetch all players along with their associated user data."""
     statement = (
-        select(User, Player)
-        .join(Player, Player.id == User.id)
+        select(Player)
+        .options(joinedload(Player.user))  # ✅ Automatically load the related User object
     )
-    results = session.exec(statement).all() # Returns a list of tuples (User, Player)
+    players = session.exec(statement).all() # Returns a list of tuples (User, Player)
 
-    if not results:
+    if not players:
         raise ValueError("No players found.")
     
     players_with_users = [
         PlayerRead(  # Create PlayerRead
             id=player.id,
-            username=user.username,
-            email=user.email,
+            username=player.user.username,
+            email=player.user.email,
             title=player.title,
             level=player.level,
             experience=player.experience
         )
-        for user, player in results
+        for player in players
     ]
 
     return players_with_users  # Return List[PlayerRead]

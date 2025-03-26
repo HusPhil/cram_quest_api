@@ -1,5 +1,5 @@
 from typing import Optional, TYPE_CHECKING
-from sqlmodel import SQLModel, Field, Relationship, Column, String
+from sqlmodel import SQLModel, Field, Relationship, Column, String, ForeignKey
 from enum import Enum
 
 
@@ -17,7 +17,7 @@ class PlayerTitle(str, Enum):
 
 class Player(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(foreign_key="user.id", unique=True)
+    user_id: int = Field(sa_column=Column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True))
 
     title: PlayerTitle = Field(
         sa_column=Column(String, nullable=False), default=PlayerTitle.NOVICE 

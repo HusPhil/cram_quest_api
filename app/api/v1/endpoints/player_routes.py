@@ -5,13 +5,14 @@ from app.core.database import get_session
 from app.core.auth import get_current_user
 from app.schemas.player_schema import PlayerCreate, PlayerRead
 from app.crud.player_crud import crud_create_player, crud_read_all_players_with_users, crud_read_player_with_user
+from app.models.player_model import PlayerTitle
 
 # router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 router = APIRouter()
 
-@router.post("/", response_model=PlayerCreate)
+@router.post("/create/", response_model=PlayerCreate)
 def create_player(  
-    user_id: int, title: str = "Noobie", 
+    user_id: int, title: PlayerTitle = PlayerTitle.NOVICE, 
     level: int = 1, experience: int = 0, 
     session: Session = Depends(get_session)):
     return crud_create_player(session, user_id, title, level, experience)
