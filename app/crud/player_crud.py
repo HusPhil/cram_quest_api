@@ -1,11 +1,16 @@
 from sqlmodel import Session, select
-from typing import Optional, List
+from typing import List
 from sqlmodel import Session
 from app.models.player_model import Player
 from app.schemas.player_schema import PlayerRead
 from app.models.user_model import User
+from app.crud.user_crud import UserNotFound
 from sqlalchemy.orm import joinedload
 from sqlalchemy.exc import IntegrityError
+
+class PlayerNotFound(Exception):
+    def __init__(self):
+        super().__init__(status_code=404, detail="Player not found")
 
 def crud_create_player(session: Session, user_id: int, title: str = "Noobie", level: int = 1, experience: int = 0) -> Player:
     """Create a Player associated with a User, ensuring 1:1 relationship."""
@@ -13,12 +18,12 @@ def crud_create_player(session: Session, user_id: int, title: str = "Noobie", le
     # 🔍 Ensure the User exists
     user = session.get(User, user_id)
     if not user:
-        raise ValueError(f"User with ID {user_id} not found.")
+        raise UserNotFound
 
     # 🚫 Prevent duplicate Player entries for the same User (Enforce 1:1)
     existing_player = session.exec(select(Player).where(Player.user_id == user_id)).first()
     if existing_player:
-        raise ValueError(f"Player for User ID {user_id} already exists.")
+        raise PlayerNotFound
 
     # ✅ Create and persist the Player
     try:
