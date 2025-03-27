@@ -4,7 +4,7 @@ from enum import Enum
 
 
 if TYPE_CHECKING:
-    from app.models.user_model import User
+    from app.models.user_model import User  # ✅ Type Hint Only
     from app.models.profile_model import Profile
     from app.models.subject_model import Subject
 
