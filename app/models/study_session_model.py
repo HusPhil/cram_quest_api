@@ -1,6 +1,6 @@
 from typing import Optional, TYPE_CHECKING
 from enum import Enum
-from sqlmodel import SQLModel, Field, Column, ForeignKey, Relationship
+from sqlmodel import SQLModel, Field, Column, ForeignKey, Relationship, DateTime
 from datetime import datetime, timezone
 
 if TYPE_CHECKING:
@@ -19,8 +19,11 @@ class StudySession(SQLModel, table=True):
     subject_id: int = Field(
         sa_column=Column(ForeignKey("subject.id", ondelete="CASCADE"), nullable=False)
     )
-    start_time: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    end_time: Optional[datetime] = None
+    start_time: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc),
+        sa_type=DateTime(timezone=True)
+    )
+    end_time: Optional[datetime] = Field(default=None, sa_type=DateTime(timezone=True))
     status: SessionStatus = Field(default=SessionStatus.ACTIVE)
     xp_earned: int = Field(default=0)
 
