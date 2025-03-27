@@ -8,7 +8,7 @@ from alembic import context
 from app.core.config import settings 
 from app.core.database import engine  # ✅ Import your database engine
 from sqlmodel import SQLModel
-from app.models import user_model, player_model  # ✅ Import all models
+from app.models import user_model, player_model, profile_model, subject_model, study_session_model, quest_model 
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -16,11 +16,11 @@ def create_player(user_id: int, player: PlayerCreate, session: Session = Depends
 
 @router.get("/{player_id}/", response_model=PlayerRead)
 def read_player(player_id: int, session: Session = Depends(get_session)):
-    return crud_read_player_with_user(session, player_id) 
+    return crud_read_player_with_user(session, player_id)
     
 @router.get("", response_model=List[PlayerRead])
 def read_all_players(session: Session = Depends(get_session)): 
-    return crud_read_all_players_with_users(session) 
+    return crud_read_all_players_with_users(session)
     
 @router.get("/{player_id}/subjects", response_model=List[SubjectRead])
 def read_all_player_subjects(player_id: int, session: Session = Depends(get_session)):

@@ -1,8 +1,8 @@
 from typing import Optional, TYPE_CHECKING
-from sqlmodel import SQLModel, Field, Relationship, Column, String, ForeignKey, Integer, CheckConstraint
+from sqlmodel import SQLModel, Field, Relationship, Column, String, ForeignKey, Integer
 
 if TYPE_CHECKING:
-    from app.models import Player, StudySession
+    from app.models import Player, StudySession, Quest
 
 class Subject(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -14,5 +14,4 @@ class Subject(SQLModel, table=True):
 
     player: "Player" = Relationship(back_populates="subjects")
     study_sessions: list["StudySession"] = Relationship(back_populates="subject")
-
-    __table_args__ = (CheckConstraint("difficulty >= 1 AND difficulty <= 5", name="difficulty_range"),)
+    quests: list["Quest"] = Relationship(back_populates="subject")

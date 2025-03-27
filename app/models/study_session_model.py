@@ -6,10 +6,12 @@ from datetime import datetime, timezone
 if TYPE_CHECKING:
     from app.models import Player, Subject
 
-class SessionStatus(Enum):
+class SessionStatus(str, Enum):
     ACTIVE = "active"
-    PENDING = "pending"
+    PENDING_CONFIRMATION = "pending"
     COMPLETED = "completed"
+    DEFEAT = "defeat"
+    CANCELED = "canceled"
 
 class StudySession(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

@@ -22,3 +22,6 @@ class StudySessionRead(BaseModel):
     xp_earned: int
     status: SessionStatus
 
+class StudySessionEnd(BaseModel):
+    accomplished_quest_ids: list[int] = Field(..., description="List of completed quest IDs")
+    total_selected_quests: int = Field(..., gt=0, description="Total number of selected quests")
