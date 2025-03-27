@@ -105,3 +105,4 @@ def crud_update_subject(session: Session, subject_id: int, updated_subject: Subj
     
 
 
+
