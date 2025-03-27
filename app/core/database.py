@@ -1,5 +1,11 @@
 from sqlmodel import SQLModel, create_engine, Session, text
 from app.core.config import settings
+from app.models.user_model import User
+from app.models.player_model import Player
+from app.models.profile_model import Profile
+from app.models.subject_model import Subject
+from app.models.study_session_model import StudySession
+from app.models.quest_model import Quest
 
 # Create database engine
 engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})

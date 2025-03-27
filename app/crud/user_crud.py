@@ -1,10 +1,9 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.models.user_model import User
+from app.models import User
 from app.core.security import Security
 from app.schemas.user_schema import UserRead, UserUpdate
-from typing import Optional
 
 class UserNotFound(HTTPException):
     def __init__(self):
@@ -118,6 +117,9 @@ def crud_update_user(session: Session, user_id: int, user_update: UserUpdate) ->
     except IntegrityError as e:
         session.rollback()
         raise HTTPException(status_code=400, detail=f"Integrity error: {str(e)}")
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
     except Exception as e:
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
@@ -131,7 +133,6 @@ def crud_delete_user(session: Session, user_id: int) -> UserRead:
             session.rollback()
             raise UserNotFound
 
-        # ❌ Prevent partial deletions in case of issues
         session.delete(user)
 
         # ✅ Explicitly commit transaction
@@ -144,5 +145,13 @@ def crud_delete_user(session: Session, user_id: int) -> UserRead:
         )
 
     except SQLAlchemyError as e:
-        session.rollback()  # ❌ Prevent broken database state
+        session.rollback()
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+    
+
+
+
+

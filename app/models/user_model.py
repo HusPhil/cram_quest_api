@@ -1,10 +1,10 @@
 from typing import Optional, TYPE_CHECKING
-from sqlmodel import SQLModel, Field, Relationship
-from app.models.base import Base  # Inherit from Base
+from sqlmodel import Field, Relationship
+from app.models.base import Base
 
 if TYPE_CHECKING:
-    from app.models.player_model import Player  # Import only for type hints
-
+    from app.models import Player
+    
 class User(Base, table=True):
     id: int = Field(default=None, primary_key=True)
     username: str = Field(unique=True, index=True)

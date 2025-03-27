@@ -2,12 +2,16 @@ from sqlmodel import Session, select
 from typing import List
 from fastapi import HTTPException
 from sqlmodel import Session
-from app.models.player_model import Player
+
+from app.models import Player, User
+
 from app.schemas.player_schema import PlayerRead
-from app.models.user_model import User
+from app.schemas.subject_schema import SubjectRead
+
 from app.crud.user_crud import UserNotFound
+
 from sqlalchemy.orm import joinedload, selectinload
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 class PlayerNotFound(HTTPException):
     def __init__(self, player_id: int):
@@ -45,6 +49,9 @@ def crud_create_player(session: Session, user_id: int, title: str = "Noobie", le
     except IntegrityError as e:
         session.rollback()
         raise ValueError(f"Database error: {str(e)}")
+    except SQLAlchemyError as e:
+        session.rollback()
+        raise RuntimeError(f"Unexpected error while creating Player: {str(e)}")
     except Exception as e:
         session.rollback()
         raise RuntimeError(f"Unexpected error while creating Player: {str(e)}")
@@ -98,3 +105,26 @@ def crud_read_all_players_with_users(session: Session) -> List[PlayerRead]:
     ]
 
     return players_with_users  # Return List[PlayerRead]
+
+def crud_read_all_player_subjects(session: Session, player_id: int) -> List[SubjectRead]:
+    statement = (
+        select(Player)
+        .where(Player.id == player_id)
+        .options(selectinload(Player.subjects))
+    )
+
+    player = session.exec(statement).first()
+
+    if not player:
+        raise PlayerNotFound(player_id)
+
+    return [
+        SubjectRead(
+            id=subject.id,
+            player_id=subject.player.id,
+            code_name=subject.code_name,
+            description=subject.description,
+            difficulty=subject.difficulty
+        )
+        for subject in player.subjects
+    ]   

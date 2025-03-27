@@ -4,8 +4,8 @@ from typing import List
 from app.core.database import get_session
 from app.core.auth import get_current_user
 from app.schemas.player_schema import PlayerCreate, PlayerRead
-from app.crud.player_crud import crud_create_player, crud_read_all_players_with_users, crud_read_player_with_user
-from app.models.player_model import PlayerTitle
+from app.schemas.subject_schema import SubjectRead
+from app.crud.player_crud import crud_create_player, crud_read_all_players_with_users, crud_read_player_with_user, crud_read_all_player_subjects
 
 # router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 router = APIRouter()
@@ -16,15 +16,12 @@ def create_player(user_id: int, player: PlayerCreate, session: Session = Depends
 
 @router.get("/{player_id}/", response_model=PlayerRead)
 def read_player(player_id: int, session: Session = Depends(get_session)):
-    try:
-        return crud_read_player_with_user(session, player_id) 
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
+    return crud_read_player_with_user(session, player_id)
+    
 @router.get("", response_model=List[PlayerRead])
 def read_all_players(session: Session = Depends(get_session)): 
-    try:
-        return crud_read_all_players_with_users(session) 
-    except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
-
+    return crud_read_all_players_with_users(session)
+    
+@router.get("/{player_id}/subjects", response_model=List[SubjectRead])
+def read_all_player_subjects(player_id: int, session: Session = Depends(get_session)):
+    return crud_read_all_player_subjects(session, player_id)
