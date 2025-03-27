@@ -1,7 +1,9 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 from enum import Enum
 from sqlmodel import SQLModel, Field, Column, ForeignKey, String, Relationship
-from app.models.player_model import Player
+
+if TYPE_CHECKING:
+    from app.models import Player
 
 
 class Mood(str, Enum):

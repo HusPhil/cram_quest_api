@@ -1,5 +1,4 @@
 from pydantic import BaseModel, Field
-from app.models.player_model import PlayerTitle
 from typing import Optional
 
 class SubjectBase(BaseModel): 

@@ -1,9 +1,7 @@
 from sqlmodel import Session, select
-from sqlmodel import Session
 from fastapi import HTTPException
-from app.models.player_model import Player
+from app.models import Player, Profile
 from app.schemas.profile_schema import ProfileRead, ProfileUpdate
-from app.models.profile_model import Profile
 from app.crud.player_crud import PlayerNotFound
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import SQLAlchemyError

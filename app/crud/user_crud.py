@@ -1,10 +1,9 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.models.user_model import User
+from app.models import User
 from app.core.security import Security
 from app.schemas.user_schema import UserRead, UserUpdate
-from typing import Optional
 
 class UserNotFound(HTTPException):
     def __init__(self):

@@ -2,11 +2,14 @@ from sqlmodel import Session, select
 from typing import List
 from fastapi import HTTPException
 from sqlmodel import Session
-from app.models.player_model import Player
+
+from app.models import Player, User
+
 from app.schemas.player_schema import PlayerRead
 from app.schemas.subject_schema import SubjectRead
-from app.models.user_model import User
+
 from app.crud.user_crud import UserNotFound
+
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 

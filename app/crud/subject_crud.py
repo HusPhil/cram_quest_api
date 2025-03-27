@@ -1,11 +1,9 @@
 from fastapi import HTTPException
 from sqlmodel import Session, select
-from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.models.player_model import Player
-from app.models.subject_model import Subject
+from sqlalchemy.exc import SQLAlchemyError
+from app.models import Player, Subject
 from app.crud.player_crud import PlayerNotFound
 from app.schemas.subject_schema import SubjectRead, SubjectCreate, SubjectUpdate
-from typing import Optional
 
 class SubjectNotFound(HTTPException):
     def __init__(self, subject_id: int):

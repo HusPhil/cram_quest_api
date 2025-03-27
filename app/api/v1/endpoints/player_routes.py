@@ -6,7 +6,6 @@ from app.core.auth import get_current_user
 from app.schemas.player_schema import PlayerCreate, PlayerRead
 from app.schemas.subject_schema import SubjectRead
 from app.crud.player_crud import crud_create_player, crud_read_all_players_with_users, crud_read_player_with_user, crud_read_all_player_subjects
-from app.models.player_model import PlayerTitle
 
 # router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 router = APIRouter()
