@@ -3,7 +3,7 @@ from app.models.player_model import PlayerTitle
 from typing import Optional
 
 class SubjectBase(BaseModel): 
-    code_name: str
+    code_name: str = Field(..., min_length=1, max_length=25)
     description: str
     difficulty: int = Field(..., ge=1, le=5)
 

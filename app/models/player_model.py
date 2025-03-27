@@ -4,7 +4,7 @@ from enum import Enum
 
 
 if TYPE_CHECKING:
-    from app.models.user_model import User  # ✅ Import only for type hints
+    from app.models.user_model import User
     from app.models.profile_model import Profile
     from app.models.subject_model import Subject
 
@@ -28,7 +28,7 @@ class Player(SQLModel, table=True):
     level: int = Field(default=1)  
     experience: int = Field(default=0)
 
+    user: "User" = Relationship(back_populates="player") 
     profile: Optional["Profile"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})  
     subjects: list["Subject"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})
-    user: "User" = Relationship(back_populates="player") 
-
+    
