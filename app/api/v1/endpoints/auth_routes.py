@@ -9,9 +9,9 @@ from app.core.security import Security
 router = APIRouter()
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
     
-    user = crud_read_user_by_username(session, username=form_data.username)
+    user = await crud_read_user_by_username(session, username=form_data.username)
     
     if not user:
         raise HTTPException(status_code=400, detail="Invalid username or password")
