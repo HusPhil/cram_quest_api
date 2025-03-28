@@ -1,10 +1,10 @@
 from fastapi import HTTPException
-from sqlmodel import Session, select
+from sqlmodel import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.models.user_model import User
+from app.models import User
 from app.core.security import Security
-from app.schemas.user_schema import UserRead
-from typing import Optional
+from app.schemas.user_schema import UserRead, UserUpdate
 
 class UserNotFound(HTTPException):
     def __init__(self):
@@ -12,137 +12,154 @@ class UserNotFound(HTTPException):
 
 class UserAlreadyExists(HTTPException):
     def __init__(self):
-        super().__init__(status_code=400, detail="User already exists")
+        super().__init__(status_code=400, detail="User with the same username or email already exists")
 
-def crud_create_user(session: Session, username: str, email: str, password: str) -> UserRead:
+
+async def crud_create_user(session: AsyncSession, username: str, email: str, password: str) -> UserRead:
     
-    existing_user = session.exec(
-        select(User.id).where((User.username == username) | (User.email == email))
-    ).first()
-
-    if existing_user:
-        raise UserAlreadyExists
+    _check_existing_user_based_on_email_and_username(session, username, email)
 
     hashed_password = Security.hash_string(password)
 
-    db_user = User(
+    new_user = User(
         username=username, 
         email=email, 
         password=hashed_password
     )
 
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
+    try:
+        session.add(new_user)
+        await session.commit()
+        await session.refresh(new_user)
+        return _serialize_user(new_user)
+    except IntegrityError:
+        await session.rollback()
+        raise UserAlreadyExists
 
-    return UserRead(
-        id=db_user.id,
-        username=db_user.username,
-        email=db_user.email
-    )
+async def crud_read_user_by_id(session: AsyncSession, user_id: int) -> UserRead:
+    user = await _get_user_or_404(session, user_id)
+    return _serialize_user(user)
 
-def crud_read_user_by_id(session: Session, user_id: int) -> UserRead:
-    user = session.get(User, user_id)
-
-    if not user:
-        raise UserNotFound
-
-    return UserRead(
-        id=user.id,
-        username=user.username,
-        email=user.email
-    )
-
-def crud_read_user_by_username(session: Session, username: str) -> User:
+async def crud_read_user_by_username(session: AsyncSession, username: str) -> User:
+    """ used in authentication """
     
-    user = session.exec(select(User).where(User.username == username)).first()
+    result = await session.execute(
+        select(User)
+        .where(User.username == username)
+    )
+
+    user = result.scalar_one_or_none()
 
     if not user:
         raise UserNotFound
 
     return user
 
-def crud_read_all_users(session: Session) -> list[UserRead]:
-    users = session.exec(select(User)).all()
-    return [
-        UserRead(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
-        for user in users
-    ]
-
-def crud_update_user(session: Session, user_id: int, username: str, email: str, password: Optional[str]) -> UserRead:
-    user = session.get(User, user_id)
-
-    if not user:
-        raise UserNotFound
+async def crud_read_all_users(session: AsyncSession) -> list[UserRead]:
+    result = await session.execute(select(User))
     
-    if username or email:
-        existing_user = session.exec(
-            select(User).where(
-                ((User.username == username) | (User.email == email)) & (User.id != user_id)
-            )
-        ).first()
+    users = result.scalars().all()
 
-        if existing_user:
-            raise UserAlreadyExists  # ❌ Prevents duplicate usernames/emails
+    return [_serialize_user(user) for user in users]
+
+async def crud_update_user(session: AsyncSession, user_id: int, user_update: UserUpdate) -> UserRead:
+    """Update a User while preventing duplicate usernames/emails and ensuring partial updates."""
+    
+    user = await _get_user_or_duplicate_error(session, user_id, user_update)
 
     update_data = {}
 
-    if username is not None:
-        update_data["username"] = username
-    if email is not None:
-        update_data["email"] = email
-    if password:
-        update_data["password"] = Security.hash_string(password)
+    if user_update.username is not None:
+        update_data["username"] = user_update.username
+    if user_update.email is not None:
+        update_data["email"] = user_update.email
+    if user_update.password:
+        update_data["password"] = Security.hash_string(user_update.password.get_secret_value())
 
     if not update_data:
-        return UserRead(id=user.id, username=user.username, email=user.email)    
+        return UserRead(id=user.id, username=user.username, email=user.email)  # ✅ No Updates, Return Existing Data
 
     try:
         for key, value in update_data.items():
             setattr(user, key, value)
 
-        session.commit()
-        session.refresh(user)
+        await session.commit()
+        await session.refresh(user)
 
-        return UserRead(
-            id=user.id,
-            username=user.username,        
-            email=user.email
-        )
-        
-    except IntegrityError as e:
+        return _serialize_user(user)
+    
+    except SQLAlchemyError as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected SQLAlchemyError: {str(e)}")
     except Exception as e:
         session.rollback()
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-
-def crud_delete_user(session: Session, user_id: int) -> UserRead:
+async def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
     try:
+        user = await _get_user_or_404(session, user_id)
 
-        # 🔍 Retrieve the user
-        user = session.get(User, user_id)
-        if not user:
-            session.rollback()
-            raise UserNotFound
-
-        # ❌ Prevent partial deletions in case of issues
-        session.delete(user)
-
-        # ✅ Explicitly commit transaction
-        session.commit()
-
-        return UserRead(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
+        await session.delete(user)
+        await session.commit()
+        
+        return _serialize_user(user)
 
     except SQLAlchemyError as e:
-        session.rollback()  # ❌ Prevent broken database state
+        session.rollback()
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+    except Exception as e:
+        session.rollback()
+        raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
+    
+
+async def _get_user_or_duplicate_error(session: AsyncSession, user_id: int, user_update: UserUpdate) -> User:
+    statement = (
+        select(User)
+        .where(
+            (User.id == user_id) | 
+            (
+                ((User.username == user_update.username) | (User.email == user_update.email)) & 
+                (User.id != user_id)
+            )
+        )
+    )
+
+    results = await session.execute(statement)  
+    results = results.scalars().all()
+
+    # ✅ Extract User & Potential Duplicate from the same result set
+
+    user = next((row for row in results if row.id == user_id), None)
+    if not user:
+        raise UserNotFound
+
+    existing_user = next((row for row in results if row.id != user_id), None)
+    if existing_user:
+        raise UserAlreadyExists
+
+    return user
+
+async def _get_user_or_404(session: AsyncSession, user_id: int) -> User:
+    user = await session.get(User, user_id)
+    if not user:
+        raise UserNotFound
+    return user
+
+async def _check_existing_user_based_on_email_and_username(session: AsyncSession, email: str, username: str) -> None:
+    result = await session.execute(
+        select(User.id)
+        .where((User.username == username) | (User.email == email))
+    )
+    existing_user = result.scalar_one_or_none()
+    
+    if existing_user:
+        raise UserAlreadyExists
+
+def _serialize_user(user: User) -> UserRead:
+    return UserRead(
+        id=user.id,
+        username=user.username,
+        email=user.email
+    )
+
+

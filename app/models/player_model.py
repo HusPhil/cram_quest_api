@@ -2,9 +2,8 @@ from typing import Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship, Column, String, ForeignKey
 from enum import Enum
 
-
 if TYPE_CHECKING:
-    from app.models.user_model import User  # ✅ Import only for type hints
+    from app.models import User, Profile, StudySession, Subject
 
 class PlayerTitle(str, Enum):
     NOVICE = "Novice"
@@ -17,13 +16,16 @@ class PlayerTitle(str, Enum):
 
 class Player(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    user_id: int = Field(sa_column=Column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True))
-
-    title: PlayerTitle = Field(
-        sa_column=Column(String, nullable=False), default=PlayerTitle.NOVICE 
+    user_id: int = Field(
+        sa_column=Column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
     )
-    level: int = Field(default=1)  
+    title: PlayerTitle = Field(
+        sa_column=Column(String, nullable=False), default=PlayerTitle.NOVICE
+    )
+    level: int = Field(default=1)
     experience: int = Field(default=0)
 
-    user: "User" = Relationship(back_populates="player") 
-
+    study_sessions: list["StudySession"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})  # Use string-based reference
+    user: "User" = Relationship(back_populates="player")
+    profile: Optional["Profile"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})
+    subjects: list["Subject"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})

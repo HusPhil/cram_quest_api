@@ -1,16 +1,45 @@
-from sqlmodel import SQLModel, create_engine, Session, text
+from sqlmodel import SQLModel
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
 from app.core.config import settings
 
-# Create database engine
-engine = create_engine(settings.DATABASE_URL, connect_args={"check_same_thread": False})
+# Import models so they are registered
+from app.models.user_model import User
+from app.models.player_model import Player
+from app.models.profile_model import Profile
+from app.models.subject_model import Subject
+from app.models.study_session_model import StudySession
+from app.models.quest_model import Quest
 
-# Dependency to get a session
-def get_session():
-    with Session(engine) as session:
-        session.exec(text("PRAGMA foreign_keys = ON;"))
+# ✅ Create async database engine
+engine = create_async_engine(
+    settings.DATABASE_URL, 
+    echo=True,
+    future=True,
+    pool_size=10,
+    max_overflow=5,
+    pool_timeout=30,
+    pool_recycle=1800
+)
+
+AsyncSessionLocal = sessionmaker(
+    bind=engine, 
+    class_=AsyncSession,
+    expire_on_commit=False
+)
+
+# ✅ Create async session factory
+async_session_maker = sessionmaker(
+    engine, class_=AsyncSession, expire_on_commit=False
+)
+
+# ✅ Dependency to get an async session
+async def get_session():
+    async with AsyncSessionLocal() as session:
         yield session
-    
 
-# Function to create tables
-def create_db_and_tables():
-    SQLModel.metadata.create_all(engine)
+# ✅ Function to create tables asynchronously
+async def create_db_and_tables():
+    async with engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.create_all)
+
