@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends
+from app.core.auth import get_current_user
 from app.schemas.quest_schema import QuestRead, QuestCreate, QuestUpdate
 from app.crud.quest_crud import crud_create_quest, crud_read_quest, crud_update_quest, crud_read_all_quests, crud_delete_quest
 from app.core.database import get_session
 from sqlalchemy.ext.asyncio import AsyncSession
 
-router = APIRouter()
+# router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
+
 
 @router.post("/", response_model=QuestRead)
 async def create_quest(quest: QuestCreate, session: AsyncSession = Depends(get_session)):

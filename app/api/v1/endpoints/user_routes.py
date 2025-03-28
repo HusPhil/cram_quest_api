@@ -5,8 +5,8 @@ from app.schemas.user_schema import UserCreate, UserRead, UserUpdate
 from app.crud.user_crud import crud_create_user, crud_read_user_by_id, crud_read_all_users, crud_update_user, crud_delete_user
 from app.core.auth import get_current_user
 
-# router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
-router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
+# router = APIRouter()
  
 @router.post("/", response_model=UserRead)
 async def create_user(user_create: UserCreate, session: AsyncSession = Depends(get_session)):

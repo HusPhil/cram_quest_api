@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
+from app.core.auth import get_current_user
 from app.schemas.study_session_schema import StudySessionRead, StudySessionCreate, StudySessionEnd
 from app.crud.study_session_crud import crud_create_study_session, crud_read_study_session, crud_end_study_session, crud_read_all_study_sessions
 
-router = APIRouter()
-
+# router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 
 @router.post("/", response_model=StudySessionRead)
 async def create_study_session(new_study_session: StudySessionCreate, session: AsyncSession = Depends(get_session)):
