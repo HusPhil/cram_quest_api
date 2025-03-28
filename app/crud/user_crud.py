@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from app.models import User
 from app.core.security import Security
-from app.schemas.user_schema import UserRead, UserUpdate
+from app.schemas.user_schema import UserRead, UserUpdate, UserCreate
 
 class UserNotFound(HTTPException):
     def __init__(self):
@@ -15,15 +15,15 @@ class UserAlreadyExists(HTTPException):
         super().__init__(status_code=400, detail="User with the same username or email already exists")
 
 
-async def crud_create_user(session: AsyncSession, username: str, email: str, password: str) -> UserRead:
+async def crud_create_user(session: AsyncSession, user_create: UserCreate) -> UserRead:
     
-    _check_existing_user_based_on_email_and_username(session, username, email)
+    _check_existing_user_based_on_email_and_username(session, user_create.username, user_create.email)
 
-    hashed_password = Security.hash_string(password)
+    hashed_password = Security.hash_string(user_create.password.get_secret_value())
 
     new_user = User(
-        username=username, 
-        email=email, 
+        username=user_create.username, 
+        email=user_create.email, 
         password=hashed_password
     )
 
@@ -95,25 +95,14 @@ async def crud_update_user(session: AsyncSession, user_id: int, user_update: Use
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
+async def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
     try:
+        user = await _get_user_or_404(session, user_id)
 
-        # 🔍 Retrieve the user
-        user = session.get(User, user_id)
-        if not user:
-            session.rollback()
-            raise UserNotFound
-
-        session.delete(user)
-
-        # ✅ Explicitly commit transaction
-        session.commit()
-
-        return UserRead(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
+        await session.delete(user)
+        await session.commit()
+        
+        return _serialize_user(user)
 
     except SQLAlchemyError as e:
         session.rollback()
