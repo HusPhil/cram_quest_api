@@ -21,11 +21,15 @@ class PlayerAlreadyExist(HTTPException):
     def __init__(self, user_id: int):
         super().__init__(status_code=404, detail=f"Player already exists for user: {user_id}")
 
+class NoPlayersFound(HTTPException):
+    def __init__(self):
+        super().__init__(status_code=404, detail="No players found")
+
 async def crud_create_player(session: AsyncSession, user_id: int, player_create: PlayerCreate) -> PlayerRead:
     """Create a Player associated with a User, ensuring 1:1 relationship."""
     
     # check if a user does exists and if it already have an associated player
-    await _check_user_and_player_exists(session, user_id)
+    user, player = await _get_user_and_player_or_error(session, user_id)
 
     # ✅ Create and persist the Player
     new_player = Player(
@@ -50,53 +54,24 @@ async def crud_create_player(session: AsyncSession, user_id: int, player_create:
         session.rollback()
         raise RuntimeError(f"Unexpected error while creating Player: {str(e)}")
     
-def crud_read_player_with_user(session: AsyncSession, player_id: int) -> PlayerRead:
+async def crud_read_player_with_user(session: AsyncSession, player_id: int) -> PlayerRead:
     """Fetch a player along with their associated user data."""
-    statement = (
-        select(Player)
-        .where(Player.id == player_id)
-        .options(joinedload(Player.user))
-    )
-    
-    player = session.exec(statement).first()
+    player = await _get_player_or_error(session, player_id)
+    return _serialize_player(player)
 
-    if not player:
-        raise PlayerNotFound(player_id)
-    
-    user = player.user
-
-    if not user:
-        raise ValueError(f"User for player with ID {player_id} not found.") 
-    
-    return PlayerRead(
-        id=player.id,
-        user_id=user.id,
-        title=player.title,
-        level=player.level,
-        experience=player.experience
-    )
-
-def crud_read_all_players_with_users(session: AsyncSession) -> List[PlayerRead]:
+async def crud_read_all_players_with_users(session: AsyncSession) -> List[PlayerRead]:
     """Fetch all players along with their associated user data."""
     statement = (
         select(Player)
         .options(joinedload(Player.user))  
     )
-    players = session.exec(statement).all() # Returns a list of tuples (User, Player)
+    players = await session.execute(statement) 
+    players = players.scalars().all()  # Returns a list of tuples (User, Player)
 
     if not players:
-        raise ValueError("No players found.")
+        raise NoPlayersFound
     
-    players_with_users = [
-        PlayerRead(
-            id=player.id,
-            user_id=player.user.id,
-            title=player.title,
-            level=player.level,
-            experience=player.experience
-        )
-        for player in players
-    ]
+    players_with_users = [_serialize_player(player) for player in players]
 
     return players_with_users  # Return List[PlayerRead]
 
@@ -124,8 +99,22 @@ def crud_read_all_player_subjects(session: AsyncSession, player_id: int) -> List
     ]   
 
 
+async def _get_player_or_error(session: AsyncSession, player_id: int) -> Player:
+    statement = (
+        select(Player)
+        .where(Player.id == player_id)
+    )
+    
+    result = await session.execute(statement)
 
-async def _check_user_and_player_exists(session: AsyncSession, user_id: int) -> None:
+    player = result.scalar_one_or_none()
+
+    if not player:
+        raise PlayerNotFound(player_id)
+
+    return player
+
+async def _get_user_and_player_or_error(session: AsyncSession, user_id: int) -> tuple[User, Player]:
     statement = (
         select(User)
         .where(User.id == user_id)
@@ -137,9 +126,11 @@ async def _check_user_and_player_exists(session: AsyncSession, user_id: int) -> 
 
     if not user:
         raise UserNotFound
-
+    
     if user.player:
-        raise PlayerAlreadyExist(user_id)
+        raise PlayerAlreadyExist(user.id)
+    
+    return (user, user.player)
 
 def _serialize_player(player: Player) -> PlayerRead:
     return PlayerRead(
