@@ -76,7 +76,8 @@ async def crud_end_study_session(session: AsyncSession, study_session_id: int, s
     study_session = await _get_study_session_or_error(session, study_session_id)
     
     # ✅ Fetch Accomplished Quests (Single Query)
-    accomplished_quests = await _get_accomplished_quests(session, session_end_data.accomplished_quest_ids)
+    accomplished_quests = await _get_accomplished_quests(session, session_end_data, study_session.subject_id)
+
     print(accomplished_quests)
     # ✅ Ensure All Accomplished Quest IDs Exist
     found_quest_ids = {quest.id for quest in accomplished_quests}
@@ -125,10 +126,16 @@ async def crud_end_study_session(session: AsyncSession, study_session_id: int, s
 
 
 
-async def _get_accomplished_quests(session: AsyncSession, accomplished_quest_ids: list[int]) -> list[Quest]:
-    statement = select(Quest).where(Quest.id.in_(accomplished_quest_ids))                                                                                                                                                                                                                                                        
+async def _get_accomplished_quests(session: AsyncSession, session_end_data: StudySessionEnd, subject_id: int) -> list[Quest]:
+    statement = (
+        select(Quest)
+        .where(
+            Quest.id.in_(session_end_data.accomplished_quest_ids),
+            Quest.subject_id == subject_id
+        )
+    )  
     result = await session.execute(statement)
-    return result.first()
+    return result.scalars().all()  # ✅ Fetch multiple rows as a list
 
 async def _get_study_session_or_error(session: AsyncSession, study_session_id: int) -> StudySession:
     """Helper function to retrieve a StudySession or raise 404 error."""
