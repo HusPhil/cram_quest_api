@@ -14,6 +14,10 @@ class SubjectAlreadyExists(HTTPException):
     def __init__(self, player_id: int):
         super().__init__(status_code=400, detail=f"Player {player_id} already has this subject")
 
+class SubjectNotBelongsToPlayer(HTTPException):
+    def __init__(self, subject_id: int, player_id: int):
+        super().__init__(status_code=404, detail=f"Subject {subject_id} does not belong to player {player_id}")
+
 async def crud_create_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> SubjectRead:
     
     await _validate_new_subject(session, player_id, new_subject)
