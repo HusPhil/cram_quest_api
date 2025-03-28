@@ -1,5 +1,5 @@
 from logging.config import fileConfig
-
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncEngine
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -10,6 +10,7 @@ from app.core.database import engine  # ✅ Import your database engine
 from sqlmodel import SQLModel
 from app.models import user_model, player_model, profile_model, subject_model, study_session_model, quest_model 
 
+import asyncio
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
@@ -32,6 +33,8 @@ target_metadata = SQLModel.metadata
 # can be acquired:
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
+
+connectable = create_async_engine(settings.DATABASE_URL, echo=True, future=True)
 
 
 def run_migrations_offline() -> None:
@@ -57,26 +60,31 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+def do_migrations(connection):
+    """Runs migrations using a sync connection inside an async context."""
+    context.configure(
+        connection=connection,
+        target_metadata=target_metadata,
+        compare_type=True
+    )
+    with context.begin_transaction():
+        context.run_migrations()
 
-def run_migrations_online() -> None:
+
+async def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
     In this scenario we need to create an Engine
     and associate a connection with the context.
 
     """
-    connectable = engine
-
-    with connectable.connect() as connection:
-        context.configure(
-            connection=connection, target_metadata=target_metadata
-        )
-
-        with context.begin_transaction():
-            context.run_migrations()
+    async with connectable.begin() as connection:
+        await connection.run_sync(do_migrations)
 
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
     run_migrations_online()
+
+asyncio.run(run_migrations_online())

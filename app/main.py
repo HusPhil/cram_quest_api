@@ -11,9 +11,9 @@ app = FastAPI(title="CramQuest API", version="1.0.0")
 
 
 @app.on_event("startup")
-def on_startup():
+async def on_startup():
     print("Starting up cramquest...")
-    create_db_and_tables()  # Automatically create missing tables
+    await create_db_and_tables()  # Automatically create missing tables
 
 @app.get('/')
 async def root():
