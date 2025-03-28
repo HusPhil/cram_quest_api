@@ -40,24 +40,13 @@ async def crud_create_subject(session: AsyncSession, player_id: int, new_subject
         await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
-def crud_read_subject(session: AsyncSession, subject_id: int) -> SubjectRead:
-    subject = session.get(Subject, subject_id)
+async def crud_read_subject(session: AsyncSession, subject_id: int) -> SubjectRead:
+    subject = await _get_subject_or_404(session, subject_id)
+    return _serialize_subject(subject)
 
-    if not subject:
-        raise SubjectNotFound(subject_id)
+async def crud_update_subject(session: AsyncSession, subject_id: int, updated_subject: SubjectUpdate) -> SubjectRead:
     
-    return SubjectRead(
-        id=subject.id, player_id=subject.player.id, 
-        code_name=subject.code_name, description=subject.description, 
-        difficulty=subject.difficulty
-    )
-
-def crud_update_subject(session: AsyncSession, subject_id: int, updated_subject: SubjectUpdate) -> SubjectRead:
-    
-    subject = session.get(Subject, subject_id)
-
-    if not subject:
-        raise SubjectNotFound(subject_id)
+    subject = await _get_subject_or_404(session, subject_id)
     
     updated_data = {}
 
@@ -71,32 +60,35 @@ def crud_update_subject(session: AsyncSession, subject_id: int, updated_subject:
         updated_data["difficulty"] = updated_subject.difficulty
 
     if not updated_data:
-        return SubjectRead(
-            id=subject.id, player_id=subject.player.id, 
-            code_name=subject.code_name, description=subject.description, 
-            difficulty=subject.difficulty
-        )
+        return _serialize_subject(subject)
 
     try:
         for key, value in updated_data.items():
             setattr(subject, key, value)
 
-        session.commit()
-        session.refresh(subject)
+        await session.commit()
+        await session.refresh(subject)
 
-        return SubjectRead(
-            id=subject.id, player_id=subject.player.id, 
-            code_name=subject.code_name, description=subject.description, 
-            difficulty=subject.difficulty
-        )
+        return _serialize_subject(subject)
     
     except SQLAlchemyError as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
+async def crud_delete_subject(session: AsyncSession, subject_id: int) -> SubjectRead:
+    subject = await _get_subject_or_404(session, subject_id)
+
+    try:
+        await session.delete(subject)
+        await session.commit()
+
+        return _serialize_subject(subject)
+    
+    except SQLAlchemyError as e:
+        await session.rollback()
 
 async def _validate_new_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> None:
     statement = select(
@@ -114,6 +106,16 @@ async def _validate_new_subject(session: AsyncSession, player_id: int, new_subje
     
     if subject_exists:
         raise SubjectAlreadyExists(player_id)
+
+async def _get_subject_or_404(session: AsyncSession, subject_id: int) -> Subject:
+    statement = select(Subject).where(Subject.id == subject_id)
+
+    subject = await session.scalar(statement)
+
+    if not subject:
+        raise SubjectNotFound(subject_id)
+
+    return subject
 
 def _serialize_subject(subject: Subject) -> SubjectRead:
     return SubjectRead(
