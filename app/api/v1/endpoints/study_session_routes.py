@@ -12,12 +12,12 @@ async def create_study_session(new_study_session: StudySessionCreate, session: A
     return await crud_create_study_session(session, new_study_session)
 
 @router.get("/", response_model=list[StudySessionRead])
-def read_all_study_sessions(session: AsyncSession = Depends(get_session)):
-    return crud_read_all_study_sessions(session)
+async def read_all_study_sessions(session: AsyncSession = Depends(get_session)):
+    return await crud_read_all_study_sessions(session)
 
 @router.get("/{study_session_id}", response_model=StudySessionRead)
-def read_study_session(study_session_id: int, session: AsyncSession = Depends(get_session)):
-    return crud_read_study_session(session, study_session_id)
+async def read_study_session(study_session_id: int, session: AsyncSession = Depends(get_session)):
+    return await crud_read_study_session(session, study_session_id)
 
 @router.patch("/{study_session_id}/end", response_model=StudySessionRead)   
 async def end_study_session(study_session_id: int, session_end_data: StudySessionEnd, session: AsyncSession = Depends(get_session)):

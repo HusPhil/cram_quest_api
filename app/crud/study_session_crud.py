@@ -10,6 +10,7 @@ from app.schemas.study_session_schema import StudySessionRead, StudySessionCreat
 from app.services.game_service import GameService
 from datetime import datetime, timezone, timedelta
 
+
 class StudySessionStillActive(HTTPException):
     def __init__(self, player_id: int):
         super().__init__(status_code=status.HTTP_409_CONFLICT, detail=f"Player {player_id} already have an active study session")
@@ -29,6 +30,8 @@ class AccomplishedQuestLengthError(HTTPException):
 class ValidationError(HTTPException):
     def __init__(self):
         super().__init__(status_code=status.HTTP_400_BAD_REQUEST, detail="Failed to perform validation checks")
+
+
 
 async def crud_create_study_session(session: AsyncSession, new_study_session: StudySessionCreate) -> StudySessionRead:
 
@@ -54,17 +57,13 @@ async def crud_create_study_session(session: AsyncSession, new_study_session: St
         await session.rollback()
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e)) 
 
-def crud_read_study_session(session: AsyncSession, study_session_id: int) -> StudySessionRead:
-    study_session = session.get(StudySession, study_session_id)
-
-    if study_session is None:
-        raise StudySessionNotFound(study_session_id)
-    
+async def crud_read_study_session(session: AsyncSession, study_session_id: int) -> StudySessionRead:
+    study_session = await _get_study_session_or_error(session, study_session_id)
     return _serialize_study_session(study_session)
 
-def crud_read_all_study_sessions(session: AsyncSession) -> list[StudySessionRead]:
-    study_sessions = session.exec(select(StudySession)).all()
-
+async def crud_read_all_study_sessions(session: AsyncSession) -> list[StudySessionRead]:
+    result = await session.scalars(select(StudySession))
+    study_sessions = result.all()
     return [_serialize_study_session(study_session) for study_session in study_sessions]
     
 async def crud_end_study_session(session: AsyncSession, study_session_id: int, session_end_data=StudySessionEnd) -> StudySessionRead:
@@ -146,18 +145,6 @@ async def _get_study_session_or_error(session: AsyncSession, study_session_id: i
     
     return study_session
 
-def _serialize_study_session(study_session: StudySession) -> StudySessionRead:
-    """Helper function to convert a StudySession into a StudySessionRead schema."""
-    return StudySessionRead(
-        id=study_session.id,
-        player_id=study_session.player_id,
-        subject_id=study_session.subject_id,
-        start_time=study_session.start_time,
-        end_time=study_session.end_time,
-        xp_earned=study_session.xp_earned,
-        status=study_session.status
-    )
-
 async def _validate_new_study_session(session: AsyncSession, new_study_session: StudySessionCreate):
     """
     Validates:
@@ -204,5 +191,18 @@ async def _validate_new_study_session(session: AsyncSession, new_study_session: 
     if has_active_session:
         raise StudySessionStillActive(new_study_session.player_id)
     
+def _serialize_study_session(study_session: StudySession) -> StudySessionRead:
+    """Helper function to convert a StudySession into a StudySessionRead schema."""
+    return StudySessionRead(
+        id=study_session.id,
+        player_id=study_session.player_id,
+        subject_id=study_session.subject_id,
+        start_time=study_session.start_time,
+        end_time=study_session.end_time,
+        xp_earned=study_session.xp_earned,
+        status=study_session.status
+    )
+
+
 
 
