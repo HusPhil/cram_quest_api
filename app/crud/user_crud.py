@@ -98,7 +98,6 @@ async def crud_update_user(session: AsyncSession, user_id: int, user_update: Use
 def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
     try:
 
-        # 🔍 Retrieve the user
         user = session.get(User, user_id)
         if not user:
             session.rollback()
