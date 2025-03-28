@@ -10,21 +10,20 @@ from typing import Optional
 router = APIRouter()
  
 @router.post("/", response_model=UserRead)
-def create_user(user: UserCreate, session: Session = Depends(get_session)):
-    return crud_create_user(session, user.username, user.email, user.password.get_secret_value())
+async def create_user(user: UserCreate, session: Session = Depends(get_session)):
+    return await crud_create_user(session, user.username, user.email, user.password.get_secret_value())
 
 @router.patch("/{user_id}", response_model=UserRead)
-def update_user(user_id: int, user_update: UserUpdate, session: Session = Depends(get_session)):
-
-    return crud_update_user(session, user_id, user_update)
+async def update_user(user_id: int, user_update: UserUpdate, session: Session = Depends(get_session)):
+    return await crud_update_user(session, user_id, user_update)
 
 @router.get("/{user_id}", response_model=UserRead)
-def read_user(user_id: int, session: Session = Depends(get_session)):
-    return crud_read_user_by_id(session, user_id)
+async def read_user(user_id: int, session: Session = Depends(get_session)):
+    return await crud_read_user_by_id(session, user_id)
 
 @router.get("/", response_model=list[UserRead])
-def read_all_users(session: Session = Depends(get_session)):
-    return crud_read_all_users(session)
+async def read_all_users(session: Session = Depends(get_session)):
+    return await crud_read_all_users(session)
 
 @router.delete("/{user_id}", response_model=UserRead)
 def delete_user(user_id: int, session: Session = Depends(get_session)):
