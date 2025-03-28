@@ -23,5 +23,5 @@ async def read_all_players(session: Session = Depends(get_session)):
     return await crud_read_all_players_with_users(session)
     
 @router.get("/{player_id}/subjects", response_model=List[SubjectRead])
-def read_all_player_subjects(player_id: int, session: Session = Depends(get_session)):
-    return crud_read_all_player_subjects(session, player_id)
+async def read_all_player_subjects(player_id: int, session: Session = Depends(get_session)):
+    return await crud_read_all_player_subjects(session, player_id)

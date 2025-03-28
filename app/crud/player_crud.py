@@ -48,10 +48,10 @@ async def crud_create_player(session: AsyncSession, user_id: int, player_create:
         return _serialize_player(new_player)
     
     except SQLAlchemyError as e:
-        session.rollback()
+        await session.rollback()
         raise RuntimeError(f"Unexpected SQLAlchemyError while creating Player: {str(e)}")
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise RuntimeError(f"Unexpected error while creating Player: {str(e)}")
     
 async def crud_read_player_with_user(session: AsyncSession, player_id: int) -> PlayerRead:
@@ -75,17 +75,8 @@ async def crud_read_all_players_with_users(session: AsyncSession) -> List[Player
 
     return players_with_users  # Return List[PlayerRead]
 
-def crud_read_all_player_subjects(session: AsyncSession, player_id: int) -> List[SubjectRead]:
-    statement = (
-        select(Player)
-        .where(Player.id == player_id)
-        .options(selectinload(Player.subjects))
-    )
-
-    player = session.exec(statement).first()
-
-    if not player:
-        raise PlayerNotFound(player_id)
+async def crud_read_all_player_subjects(session: AsyncSession, player_id: int) -> List[SubjectRead]:
+    player: Player = await _get_player_with_subject_or_error(session, player_id)
 
     return [
         SubjectRead(
@@ -112,6 +103,20 @@ async def _get_player_or_error(session: AsyncSession, player_id: int) -> Player:
     if not player:
         raise PlayerNotFound(player_id)
 
+    return player
+
+async def _get_player_with_subject_or_error(session: AsyncSession, player_id: int) -> Player:
+    statement = (
+        select(Player)
+        .where(Player.id == player_id)
+        .options(selectinload(Player.subjects))
+    )
+
+    player = await session.scalar(statement)
+
+    if not player:
+        raise PlayerNotFound(player_id)
+    
     return player
 
 async def _get_user_and_player_or_error(session: AsyncSession, user_id: int) -> tuple[User, Player]:
