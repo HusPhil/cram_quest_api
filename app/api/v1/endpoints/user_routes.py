@@ -26,6 +26,6 @@ async def read_all_users(session: Session = Depends(get_session)):
     return await crud_read_all_users(session)
 
 @router.delete("/{user_id}", response_model=UserRead)
-def delete_user(user_id: int, session: Session = Depends(get_session)):
-    return crud_delete_user(session, user_id)
+async def delete_user(user_id: int, session: Session = Depends(get_session)):
+    return await crud_delete_user(session, user_id)
 

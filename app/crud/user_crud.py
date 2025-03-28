@@ -95,24 +95,14 @@ async def crud_update_user(session: AsyncSession, user_id: int, user_update: Use
         session.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
-def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
+async def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
     try:
+        user = await _get_user_or_404(session, user_id)
 
-        user = session.get(User, user_id)
-        if not user:
-            session.rollback()
-            raise UserNotFound
-
-        session.delete(user)
-
-        # ✅ Explicitly commit transaction
-        session.commit()
-
-        return UserRead(
-            id=user.id,
-            username=user.username,
-            email=user.email
-        )
+        await session.delete(user)
+        await session.commit()
+        
+        return _serialize_user(user)
 
     except SQLAlchemyError as e:
         session.rollback()
