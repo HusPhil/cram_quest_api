@@ -1,8 +1,10 @@
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, List, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Relationship, Column, String, ForeignKey, Integer
 
 if TYPE_CHECKING:
-    from app.models import Player, StudySession, Quest
+    from app.models.player_model import Player
+    from app.models.study_session_model import StudySession
+    from app.models.quest_model import Quest
 
 class Subject(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -12,6 +14,6 @@ class Subject(SQLModel, table=True):
     description: str = Field(sa_column=Column(String, nullable=False))
     difficulty: int = Field(sa_column=Column(Integer, nullable=False), ge=1, le=5)
 
-    player: "Player" = Relationship(back_populates="subjects")
-    study_sessions: list["StudySession"] = Relationship(back_populates="subject")
-    quests: list["Quest"] = Relationship(back_populates="subject")
+    player: Optional["Player"] = Relationship(back_populates="subjects")
+    study_sessions: List["StudySession"] = Relationship(back_populates="subject")
+    quests: List["Quest"] = Relationship(back_populates="subject")

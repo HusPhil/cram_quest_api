@@ -1,5 +1,6 @@
-from fastapi import HTTPException
-from sqlmodel import Session, select
+from fastapi import HTTPException, status
+from sqlmodel import select, exists
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from app.models import Player, Subject
 from app.crud.player_crud import PlayerNotFound
@@ -10,43 +11,36 @@ class SubjectNotFound(HTTPException):
         super().__init__(status_code=404, detail=f"Subject {subject_id} not found")
 
 class SubjectAlreadyExists(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=400, detail="Subject already exists")
+    def __init__(self, player_id: int):
+        super().__init__(status_code=400, detail=f"Player {player_id} already has this subject")
 
-def crud_create_subject(session: Session, player_id: int, new_subject: SubjectCreate) -> SubjectRead:
-    player = session.get(Player, player_id)
-
-    if not player:
-        raise PlayerNotFound(player_id)
+async def crud_create_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> SubjectRead:
+    
+    await _validate_new_subject(session, player_id, new_subject)
+    
+    subject = Subject(
+        player_id=player_id, 
+        code_name=new_subject.code_name,
+        description=new_subject.description, 
+        difficulty=new_subject.difficulty
+    )
 
     try:
-        subject = Subject(
-            player_id=player_id, 
-            code_name=new_subject.code_name,
-            description=new_subject.description, 
-            difficulty=new_subject.difficulty
-        )
         
         session.add(subject)
-        session.commit()
-        session.refresh(subject)
+        await session.commit()
+        await session.refresh(subject)
 
-        return SubjectRead(
-            id=subject.id, player_id=subject.player.id, 
-            code_name=subject.code_name, description=subject.description, 
-            difficulty=subject.difficulty
-        )
+        return _serialize_subject(subject)
     
     except SQLAlchemyError as e:
-        session.rollback()
-        if "difficulty_range" in str(e):  # ✅ Custom error message for difficulty constraint
-            raise HTTPException(status_code=400, detail="Difficulty must be between 1 and 5.")
-        raise HTTPException(status_code=500, detail=str(e))
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=f"An SQLAlchemy error occurred: {str(e)}")
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     
-def crud_read_subject(session: Session, subject_id: int) -> SubjectRead:
+def crud_read_subject(session: AsyncSession, subject_id: int) -> SubjectRead:
     subject = session.get(Subject, subject_id)
 
     if not subject:
@@ -58,7 +52,7 @@ def crud_read_subject(session: Session, subject_id: int) -> SubjectRead:
         difficulty=subject.difficulty
     )
 
-def crud_update_subject(session: Session, subject_id: int, updated_subject: SubjectUpdate) -> SubjectRead:
+def crud_update_subject(session: AsyncSession, subject_id: int, updated_subject: SubjectUpdate) -> SubjectRead:
     
     subject = session.get(Subject, subject_id)
 
@@ -104,5 +98,26 @@ def crud_update_subject(session: Session, subject_id: int, updated_subject: Subj
         raise HTTPException(status_code=500, detail=str(e))
     
 
+async def _validate_new_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> None:
+    statement = select(
+        exists().where(Player.id == player_id),  # ✅ Check if Player exists
+        exists().where(
+            (Subject.player_id == player_id) & (Subject.code_name == new_subject.code_name)  # ✅ Check if Subject exists
+        )
+    )
 
+    result = await session.execute(statement)
+    player_exists, subject_exists = result.first()
+    
+    if not player_exists:
+        raise PlayerNotFound(player_id)
+    
+    if subject_exists:
+        raise SubjectAlreadyExists(player_id)
 
+def _serialize_subject(subject: Subject) -> SubjectRead:
+    return SubjectRead(
+        id=subject.id, player_id=subject.player_id, 
+        code_name=subject.code_name, description=subject.description, 
+        difficulty=subject.difficulty
+    )
