@@ -48,10 +48,10 @@ async def crud_create_player(session: AsyncSession, user_id: int, player_create:
         return _serialize_player(new_player)
     
     except SQLAlchemyError as e:
-        session.rollback()
+        await session.rollback()
         raise RuntimeError(f"Unexpected SQLAlchemyError while creating Player: {str(e)}")
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise RuntimeError(f"Unexpected error while creating Player: {str(e)}")
     
 async def crud_read_player_with_user(session: AsyncSession, player_id: int) -> PlayerRead:

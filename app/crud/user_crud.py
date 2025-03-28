@@ -89,10 +89,10 @@ async def crud_update_user(session: AsyncSession, user_id: int, user_update: Use
         return _serialize_user(user)
     
     except SQLAlchemyError as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected SQLAlchemyError: {str(e)}")
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"Unexpected error: {str(e)}")
 
 async def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
@@ -105,10 +105,10 @@ async def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
         return _serialize_user(user)
 
     except SQLAlchemyError as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
     except Exception as e:
-        session.rollback()
+        await session.rollback()
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
     
 

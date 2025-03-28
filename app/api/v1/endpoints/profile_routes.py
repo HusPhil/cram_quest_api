@@ -6,7 +6,7 @@ from app.crud.profile_crud import crud_create_profile, crud_read_profile, crud_r
 
 router = APIRouter()
 
-@router.post("/{player_id}")
+@router.post("/{player_id}", response_model=ProfileRead)
 async def create_profile(player_id: int, profile_create: ProfileCreate, session: AsyncSession = Depends(get_session)):
     return await crud_create_profile(session, player_id, profile_create)
 
