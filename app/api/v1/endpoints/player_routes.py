@@ -11,8 +11,8 @@ from app.crud.player_crud import crud_create_player, crud_read_all_players_with_
 router = APIRouter()
 
 @router.post("/{user_id}", response_model=PlayerRead)
-def create_player(user_id: int, player: PlayerCreate, session: Session = Depends(get_session)):
-    return crud_create_player(session, user_id, player.title, player.level, player.experience)
+async def create_player(user_id: int, player_create: PlayerCreate, session: Session = Depends(get_session)):
+    return await crud_create_player(session, user_id, player_create)
 
 @router.get("/{player_id}/", response_model=PlayerRead)
 def read_player(player_id: int, session: Session = Depends(get_session)):
