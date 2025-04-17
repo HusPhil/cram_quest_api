@@ -7,7 +7,21 @@ from app.api.v1.endpoints import (
     profile_routes, subject_routes, 
     study_session_routes, quest_routes
 )
+from fastapi.middleware.cors import CORSMiddleware
+
+
 app = FastAPI(title="CramQuest API", version="1.0.0")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173",  # ✅ Allow local frontend during development
+        "http://192.168.1.3:5173",  # ✅ Allow local frontend during development
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],  # ✅ Allow all HTTP methods (GET, POST, etc.)
+    allow_headers=["*"],  # ✅ Allow all headers
+)
 
 
 @app.on_event("startup")

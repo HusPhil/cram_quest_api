@@ -65,7 +65,7 @@ async def crud_read_all_users(session: AsyncSession) -> list[UserRead]:
 async def crud_update_user(session: AsyncSession, user_id: int, user_update: UserUpdate) -> UserRead:
     """Update a User while preventing duplicate usernames/emails and ensuring partial updates."""
     
-    user = await _get_user_or_duplicate_error(session, user_id, user_update)
+    user = await _get_user_or_error(session, user_id, user_update)
 
     update_data = {}
 
@@ -111,8 +111,7 @@ async def crud_delete_user(session: AsyncSession, user_id: int) -> UserRead:
         await session.rollback()
         raise HTTPException(status_code=500, detail=f"Delete failed: {str(e)}")
     
-
-async def _get_user_or_duplicate_error(session: AsyncSession, user_id: int, user_update: UserUpdate) -> User:
+async def _get_user_or_error(session: AsyncSession, user_id: int, user_update: UserUpdate) -> User:
     statement = (
         select(User)
         .where(

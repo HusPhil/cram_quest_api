@@ -4,10 +4,11 @@ from app.core.auth import get_current_user
 
 from app.core.database import get_session
 from app.schemas.subject_schema import SubjectCreate, SubjectRead, SubjectUpdate
-from app.crud.subject_crud import crud_create_subject, crud_read_subject, crud_update_subject, crud_delete_subject
+from app.schemas.quest_schema import QuestRead
+from app.crud.subject_crud import crud_create_subject, crud_read_subject, crud_update_subject, crud_delete_subject, crud_read_subject_all_quests
 
-# router = APIRouter()
-router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
+router = APIRouter()
+# router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 
 @router.post("/", response_model=SubjectRead)
 async def create_subject(player_id: int, subject_create: SubjectCreate, session: AsyncSession = Depends(get_session)):
@@ -16,6 +17,10 @@ async def create_subject(player_id: int, subject_create: SubjectCreate, session:
 @router.get("/{subject_id}", response_model=SubjectRead)
 async def read_subject(subject_id: int, session: AsyncSession = Depends(get_session)):
     return await crud_read_subject(session, subject_id)
+
+@router.get("/{subject_id}/quests", response_model=list[QuestRead])
+async def read_subject_quests(subject_id: int, session: AsyncSession = Depends(get_session)):
+    return await crud_read_subject_all_quests(session, subject_id)
 
 @router.patch("/{subject_id}", response_model=SubjectRead)
 async def update_subject(subject_id: int, updated_subject: SubjectUpdate, session: AsyncSession = Depends(get_session)):

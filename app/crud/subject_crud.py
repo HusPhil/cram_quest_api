@@ -2,9 +2,11 @@ from fastapi import HTTPException, status
 from sqlmodel import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from app.models import Player, Subject
+from app.models import Player, Subject, Quest
 from app.crud.player_crud import PlayerNotFound
 from app.schemas.subject_schema import SubjectRead, SubjectCreate, SubjectUpdate
+from app.schemas.quest_schema import QuestRead
+
 
 class SubjectNotFound(HTTPException):
     def __init__(self, subject_id: int):
@@ -93,7 +95,31 @@ async def crud_delete_subject(session: AsyncSession, subject_id: int) -> Subject
     
     except SQLAlchemyError as e:
         await session.rollback()
+        raise HTTPException(status_code=500, detail=f"An SQLAlchemy error occurred: {str(e)}")
+    except Exception as e:
+        await session.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+    
+async def crud_read_subject_all_quests(session: AsyncSession, subject_id: int) -> list[QuestRead]:
+    
+    result = await session.scalars(
+        select(Quest)
+        .where(Quest.subject_id == subject_id)
+    )
 
+    quests = result.all()
+
+    return [QuestRead(
+        id=quest.id,
+        subject_id=quest.subject_id,
+        description=quest.description,
+        difficulty=quest.difficulty,
+        status=quest.status,
+        created_at=quest.created_at 
+        )     
+        for quest in quests
+    ]
+    
 async def _validate_new_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> None:
     statement = select(
         exists().where(Player.id == player_id),  # ✅ Check if Player exists

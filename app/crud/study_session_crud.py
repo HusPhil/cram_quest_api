@@ -78,7 +78,6 @@ async def crud_end_study_session(session: AsyncSession, study_session_id: int, s
     # ✅ Fetch Accomplished Quests (Single Query)
     accomplished_quests = await _get_accomplished_quests(session, session_end_data, study_session.subject_id)
 
-    print(accomplished_quests)
     # ✅ Ensure All Accomplished Quest IDs Exist
     found_quest_ids = {quest.id for quest in accomplished_quests}
     requested_quest_ids = set(session_end_data.accomplished_quest_ids)

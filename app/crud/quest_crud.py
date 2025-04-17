@@ -155,7 +155,6 @@ async def _validate_new_quest(session: AsyncSession, new_quest: QuestCreate) -> 
 
     quest_exists, subject_exists = result.one_or_none() 
 
-    print(quest_exists, subject_exists)
 
 
     if quest_exists:

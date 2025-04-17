@@ -5,7 +5,7 @@ from typing import Optional
 
 
 class ProfileCreate(BaseModel):
-    avatar_url: str = "default.png"
+    avatar_url: str = "default/default_1.png"
     bio: str = ""
     mood: Mood = Mood.NEUTRAL
 

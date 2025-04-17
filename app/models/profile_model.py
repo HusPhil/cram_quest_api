@@ -17,7 +17,7 @@ class Profile(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     player_id: int = Field(sa_column=Column(ForeignKey("player.id", ondelete="CASCADE"), unique=True, nullable=False))
 
-    avatar_url: Optional[str] = Field(default=None)  
+    avatar_url: Optional[str] = Field(default="default/default_1.png")  
     bio: Optional[str] = Field(default="")  
     mood: Mood = Field(sa_column=Column(String, nullable=False), default=Mood.NEUTRAL)  
 

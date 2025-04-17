@@ -76,6 +76,7 @@ async def crud_read_all_players_with_users(session: AsyncSession) -> List[Player
     return players_with_users  # Return List[PlayerRead]
 
 async def crud_read_all_player_subjects(session: AsyncSession, player_id: int) -> List[SubjectRead]:
+    print(f"Fetching subjects for player_id: {player_id}")
     player: Player = await _get_player_with_subject_or_error(session, player_id)
 
     return [
@@ -104,6 +105,8 @@ async def _get_player_or_error(session: AsyncSession, player_id: int) -> Player:
         raise PlayerNotFound(player_id)
 
     return player
+
+
 
 async def _get_player_with_subject_or_error(session: AsyncSession, player_id: int) -> Player:
     statement = (
