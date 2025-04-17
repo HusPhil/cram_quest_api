@@ -3,10 +3,11 @@ from sqlmodel import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
 from app.models import Player, Subject, Quest
-from app.crud.player_crud import PlayerNotFound
+
 from app.schemas.subject_schema import SubjectRead, SubjectCreate, SubjectUpdate
 from app.schemas.quest_schema import QuestRead
 
+from app.exceptions.player_exceptions import PlayerNotFound
 
 class SubjectNotFound(HTTPException):
     def __init__(self, subject_id: int):

@@ -13,17 +13,8 @@ from app.crud.user_crud import UserNotFound
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
-class PlayerNotFound(HTTPException):
-    def __init__(self, player_id: int):
-        super().__init__(status_code=404, detail=f"Player {player_id} not found")
+from app.exceptions.player_exceptions import PlayerNotFound, NoPlayersFound, PlayerAlreadyExist
 
-class PlayerAlreadyExist(HTTPException):
-    def __init__(self, user_id: int):
-        super().__init__(status_code=404, detail=f"Player already exists for user: {user_id}")
-
-class NoPlayersFound(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=404, detail="No players found")
 
 async def crud_create_player(session: AsyncSession, user_id: int, player_create: PlayerCreate) -> PlayerRead:
     """Create a Player associated with a User, ensuring 1:1 relationship."""

@@ -33,7 +33,7 @@ class InvalidCredential(HTTPException):
 
 
 @router.post("/sign_in")
-async def sign_in(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)):
+async def sign_in(form_data: OAuth2PasswordRequestForm = Depends(), session: Session = Depends(get_session)) -> JSONResponse:
     
     try:
         user = await crud_read_user_by_username(session, username=form_data.username)
@@ -51,16 +51,13 @@ async def sign_in(form_data: OAuth2PasswordRequestForm = Depends(), session: Ses
     return response
 
 @router.post("/sign_up")
-async def sign_up(sign_up_request: SignUpRequest, session: Session = Depends(get_session)):
-    print("user_create", sign_up_request)
-    
+async def sign_up(sign_up_request: SignUpRequest, session: Session = Depends(get_session)) -> JSONResponse:
     new_user = await crud_sign_up_user(session, sign_up_request)
-    print(f"\n\n\n\n\n\n\n{new_user}\n\n\n\n\n\n\n")
     response = _get_authentication_response(new_user)
     return response 
 
 @router.post("/sign_out")
-async def sign_out():
+async def sign_out() -> JSONResponse:
     response = JSONResponse(content={"message": "Successfully signed out"})
 
     response.delete_cookie(
@@ -74,7 +71,7 @@ async def sign_out():
     return response
 
 @router.post("/refresh_token")
-async def refresh_token(request: Request, response: Response):
+async def refresh_token(request: Request):
 
     refresh_token = request.cookies.get(refresh_token_cookie_key)
 
@@ -87,7 +84,7 @@ async def refresh_token(request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 
     new_access_token = create_access_token({"sub": user_id})
-    return {"access_token": new_access_token}
+    return {"access_token": new_access_token, "user_id": int(user_id)}
 
 
 def _get_authentication_response(user: UserRead) -> JSONResponse:

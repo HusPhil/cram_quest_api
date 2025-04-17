@@ -3,7 +3,6 @@ from fastapi import HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models import Quest, Subject
 from app.schemas.quest_schema import QuestRead, QuestCreate, QuestUpdate, QuestStatus
-from app.crud.player_crud import PlayerNotFound
 from app.crud.subject_crud import SubjectNotFound
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import SQLAlchemyError

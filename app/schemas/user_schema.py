@@ -1,6 +1,7 @@
 from typing import Annotated
 from typing import Optional
 from pydantic import EmailStr, SecretStr, Field, BaseModel
+from app.schemas.player_schema import PlayerRead
 
 class UserBase(BaseModel):
     username: str = Field(..., min_length=3, strip_whitespace=True)
@@ -8,6 +9,9 @@ class UserBase(BaseModel):
 
 class UserRead(UserBase):
     id: int
+
+class UserPlayerRead(UserRead):
+    player: PlayerRead
 
 class UserCreate(UserBase):
     password: SecretStr

@@ -4,12 +4,13 @@ from app.models import StudySession, Player, Subject, Quest
 from app.models.quest_model import QuestStatus
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.study_session_model import SessionStatus
-from app.crud.player_crud import PlayerNotFound
+
 from app.crud.subject_crud import SubjectNotFound, SubjectNotBelongsToPlayer
 from app.schemas.study_session_schema import StudySessionRead, StudySessionCreate, StudySessionEnd
 from app.services.game_service import GameService
 from datetime import datetime, timezone, timedelta
 
+from app.exceptions.player_exceptions import PlayerNotFound
 
 class StudySessionStillActive(HTTPException):
     def __init__(self, player_id: int):

@@ -1,10 +1,13 @@
 from fastapi import HTTPException
 from sqlmodel import select
+from sqlalchemy.orm import joinedload,selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
-from app.models import User
+from app.models import User, Player
 from app.core.security import Security
-from app.schemas.user_schema import UserRead, UserUpdate, UserCreate
+from app.schemas.user_schema import UserRead, UserUpdate, UserCreate, UserPlayerRead
+from app.schemas.player_schema import PlayerRead    
+from app.exceptions.player_exceptions import PlayerNotFound
 
 class UserNotFound(HTTPException):
     def __init__(self):
@@ -39,6 +42,18 @@ async def crud_create_user(session: AsyncSession, user_create: UserCreate) -> Us
 async def crud_read_user_by_id(session: AsyncSession, user_id: int) -> UserRead:
     user = await _get_user_or_404(session, user_id)
     return _serialize_user(user)
+
+async def crud_read_user_player(session: AsyncSession, user_id: int) -> PlayerRead:
+    player_by_user = await _get_player_by_user_or_404(session, user_id)
+
+    print("player_by_user", player_by_user)
+    return PlayerRead(
+        id=player_by_user.id,
+        user_id=player_by_user.user_id,
+        experience=player_by_user.experience,
+        level=player_by_user.level,
+        title=player_by_user.title
+    )
 
 async def crud_read_user_by_username(session: AsyncSession, username: str) -> User:
     """ used in authentication """
@@ -143,6 +158,16 @@ async def _get_user_or_404(session: AsyncSession, user_id: int) -> User:
     if not user:
         raise UserNotFound
     return user
+
+async def _get_player_by_user_or_404(session: AsyncSession, user_id: int) -> Player:
+    statement = select(Player).where(Player.user_id == user_id)
+    result = await session.execute(statement)
+    player = result.scalars().first()
+    
+    if not player:
+        raise PlayerNotFound(-1)
+    
+    return player
 
 async def _check_existing_user_based_on_email_and_username(session: AsyncSession, email: str, username: str) -> None:
     result = await session.execute(

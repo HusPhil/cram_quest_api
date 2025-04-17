@@ -3,17 +3,13 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from fastapi import HTTPException
 from app.models import Player, Profile
 from app.schemas.profile_schema import ProfileRead, ProfileUpdate, ProfileCreate
-from app.crud.player_crud import PlayerNotFound
+
 from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import SQLAlchemyError
 
-class ProfileNotFound(HTTPException):
-    def __init__(self, profile_id: int):
-        super().__init__(status_code=404, detail=f"Profile {profile_id} not found")
+from app.exceptions.player_exceptions import PlayerNotFound
+from app.exceptions.profile_exceptions import ProfileNotFound, ProfileAlreadyExist
 
-class ProfileAlreadyExist(HTTPException):
-    def __init__(self, player_id: int):
-        super().__init__(status_code=400, detail=f"Profile already exists for player: {player_id}")
 
 async def crud_create_profile(session: AsyncSession, player_id: int, profile_create: ProfileCreate) -> ProfileRead:
     
