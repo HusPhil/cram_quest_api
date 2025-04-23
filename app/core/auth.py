@@ -38,7 +38,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), session: AsyncSe
         if user_id is None:
             raise credentials_exception
     except JWTError as e:
-        print("JWTError", e)
+        print("JWTError in get_current_user", e)
         raise credentials_exception
     
     

@@ -4,8 +4,9 @@ from typing import List
 from app.core.database import get_session
 from app.core.auth import get_current_user, get_current_admin
 from app.schemas.player_schema import PlayerCreate, PlayerRead
+from app.schemas.profile_schema import ProfileRead
 from app.schemas.subject_schema import SubjectRead
-from app.crud.player_crud import crud_create_player, crud_read_all_players_with_users, crud_read_player_with_user, crud_read_all_player_subjects
+from app.crud.player_crud import crud_create_player, crud_read_all_players_with_users, crud_read_player_with_user, crud_read_all_player_subjects, crud_read_player_profile
 from app.models import User
 
 router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
@@ -28,6 +29,10 @@ async def read_all_players(session: Session = Depends(get_session), admin_user: 
 @router.get("/{player_id}/subjects", response_model=List[SubjectRead])
 async def read_all_player_subjects(player_id: int, session: Session = Depends(get_session)):
     return await crud_read_all_player_subjects(session, player_id)
+
+@router.get("/{player_id}/profile", response_model=ProfileRead)
+async def read_player_profile(player_id: int, session: Session = Depends(get_session)):
+    return await crud_read_player_profile(session, player_id)
 
 
 

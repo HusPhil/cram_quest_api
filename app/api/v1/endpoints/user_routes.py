@@ -24,7 +24,7 @@ async def read_user(user_id: int, session: AsyncSession = Depends(get_session)):
     return await crud_read_user_by_id(session, user_id)
 
 @router.get("/{user_id}/player", response_model=PlayerRead)
-async def read_player_by_user(user_id: int, session: AsyncSession = Depends(get_session)):
+async def read_user_player(user_id: int, session: AsyncSession = Depends(get_session)):
     return await crud_read_user_player(session, user_id)
 
 @router.get("/", response_model=list[UserRead])

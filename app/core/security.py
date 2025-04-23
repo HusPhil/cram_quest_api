@@ -23,4 +23,5 @@ class Security:
                 raise HTTPException(status_code=401, detail="Invalid refresh token")
             return user_id
         except JWTError:
+            print("JWTError:", JWTError)
             raise HTTPException(status_code=401, detail="Invalid refresh token")

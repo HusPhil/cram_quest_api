@@ -9,20 +9,18 @@ class QuestStatus(str, Enum):
 
 class QuestBase(BaseModel):
     subject_id: int
-    description: str 
+    description: str = Field(None, min_length=1, max_length=255)
     difficulty: int = Field(..., ge=1, le=5, description="Difficulty level (1 to 5)")
     status: QuestStatus = QuestStatus.IN_PROGRESS
 
-class QuestCreate(BaseModel):
-    subject_id: int
-    description: str 
-    difficulty: int = Field(..., ge=1, le=5, description="Difficulty level (1 to 5)")
+class QuestCreate(QuestBase):
+    pass
 
 class QuestRead(QuestBase):
     id: int
     created_at: datetime
 
 class QuestUpdate(BaseModel):
-    description: Optional[str] = Field(None, min_length=5, max_length=255)
+    description: Optional[str] = Field(None, min_length=1, max_length=255)
     difficulty: Optional[int] = Field(None, ge=1, le=5)
     status: Optional[QuestStatus] = None

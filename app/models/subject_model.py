@@ -16,4 +16,4 @@ class Subject(SQLModel, table=True):
 
     player: Optional["Player"] = Relationship(back_populates="subjects")
     study_sessions: List["StudySession"] = Relationship(back_populates="subject")
-    quests: List["Quest"] = Relationship(back_populates="subject")
+    quests: List["Quest"] = Relationship(back_populates="subject", sa_relationship_kwargs={"cascade": "all, delete"})

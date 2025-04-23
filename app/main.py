@@ -17,7 +17,10 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:5173",  # ✅ Allow local frontend during development
         "http://192.168.1.3:5173",  # ✅ Allow local frontend during development
+        "http://192.168.1.9:5173",  # ✅ Allow local frontend during development
+        "http://192.168.1.10:5173",  # ✅ Allow local frontend during development
     ],
+    # allow_origins=["http://192.168.1.3:5173"],
     allow_credentials=True,
     allow_methods=["*"],  # ✅ Allow all HTTP methods (GET, POST, etc.)
     allow_headers=["*"],  # ✅ Allow all headers

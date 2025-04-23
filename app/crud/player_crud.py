@@ -3,10 +3,11 @@ from typing import List
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Player, User
+from app.models import Player, User, Profile
 
 from app.schemas.player_schema import PlayerRead, PlayerCreate
 from app.schemas.subject_schema import SubjectRead
+from app.schemas.profile_schema import ProfileRead
 
 from app.crud.user_crud import UserNotFound
 
@@ -14,6 +15,7 @@ from sqlalchemy.orm import joinedload, selectinload
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.exceptions.player_exceptions import PlayerNotFound, NoPlayersFound, PlayerAlreadyExist
+from app.exceptions.profile_exceptions import ProfileNotFound
 
 
 async def crud_create_player(session: AsyncSession, user_id: int, player_create: PlayerCreate) -> PlayerRead:
@@ -80,6 +82,16 @@ async def crud_read_all_player_subjects(session: AsyncSession, player_id: int) -
         )
         for subject in player.subjects
     ]   
+
+async def crud_read_player_profile(session: AsyncSession, player_id: int) -> ProfileRead:
+    statement = select(Profile).where(Profile.player_id == player_id)
+    result = await session.execute(statement)
+    profile = result.scalars().first()
+    
+    if not profile:
+        raise ProfileNotFound(-1)
+    
+    return profile
 
 
 async def _get_player_or_error(session: AsyncSession, player_id: int) -> Player:

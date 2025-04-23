@@ -22,7 +22,8 @@ class SubjectNotBelongsToPlayer(HTTPException):
         super().__init__(status_code=404, detail=f"Subject {subject_id} does not belong to player {player_id}")
 
 async def crud_create_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> SubjectRead:
-    
+    print(f"Creating subject for player_id: {player_id}")
+    print(f"New subject: {new_subject}")
     await _validate_new_subject(session, player_id, new_subject)
     
     subject = Subject(
@@ -106,6 +107,7 @@ async def crud_read_subject_all_quests(session: AsyncSession, subject_id: int) -
     result = await session.scalars(
         select(Quest)
         .where(Quest.subject_id == subject_id)
+        .order_by(Quest.created_at.desc(), Quest.created_at.asc())
     )
 
     quests = result.all()

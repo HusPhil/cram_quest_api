@@ -10,8 +10,8 @@ router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)
 
 
 @router.post("/", response_model=QuestRead)
-async def create_quest(quest: QuestCreate, session: AsyncSession = Depends(get_session)):
-    return await crud_create_quest(session, quest)
+async def create_quest(new_quest: QuestCreate, session: AsyncSession = Depends(get_session)):
+    return await crud_create_quest(session, new_quest)
 
 @router.get("/{quest_id}", response_model=QuestRead)
 async def read_quest(quest_id: int, session: AsyncSession = Depends(get_session)):

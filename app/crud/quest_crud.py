@@ -24,6 +24,8 @@ class QuestAlreadyCompleted(HTTPException):
 async def crud_create_quest(session: AsyncSession, new_quest: QuestCreate) -> QuestRead:
     """ Create a new quest with validation """
     # Check for existing quest
+
+    print("Creating new quest...", new_quest)
     
     await _validate_new_quest(session, new_quest)
     

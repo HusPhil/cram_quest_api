@@ -21,7 +21,7 @@ from app.crud.user_crud import crud_read_user_by_username, crud_create_user
 from app.models.user_model import User
 from app.schemas.user_schema import UserRead
 
-from jose import JWTError, jwt
+from jose import JWTError, ExpiredSignatureError
 
 refresh_token_cookie_key = "_Host-cramquest_ssfpwrtk"
 
@@ -72,7 +72,6 @@ async def sign_out() -> JSONResponse:
 
 @router.post("/refresh_token")
 async def refresh_token(request: Request):
-
     refresh_token = request.cookies.get(refresh_token_cookie_key)
 
     if not refresh_token:
@@ -80,6 +79,8 @@ async def refresh_token(request: Request):
 
     try:
         user_id = Security.verify_refresh_token(refresh_token)
+    except ExpiredSignatureError:
+        raise HTTPException(status_code=403, detail="Refresh token expired")
     except JWTError:
         raise HTTPException(status_code=401, detail="Invalid refresh token")
 

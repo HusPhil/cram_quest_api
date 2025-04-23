@@ -44,15 +44,14 @@ async def crud_read_user_by_id(session: AsyncSession, user_id: int) -> UserRead:
     return _serialize_user(user)
 
 async def crud_read_user_player(session: AsyncSession, user_id: int) -> PlayerRead:
-    player_by_user = await _get_player_by_user_or_404(session, user_id)
+    user_player = await _get_user_player_or_404(session, user_id)
 
-    print("player_by_user", player_by_user)
     return PlayerRead(
-        id=player_by_user.id,
-        user_id=player_by_user.user_id,
-        experience=player_by_user.experience,
-        level=player_by_user.level,
-        title=player_by_user.title
+        id=user_player.id,
+        user_id=user_player.user_id,
+        experience=user_player.experience,
+        level=user_player.level,
+        title=user_player.title
     )
 
 async def crud_read_user_by_username(session: AsyncSession, username: str) -> User:
@@ -159,7 +158,7 @@ async def _get_user_or_404(session: AsyncSession, user_id: int) -> User:
         raise UserNotFound
     return user
 
-async def _get_player_by_user_or_404(session: AsyncSession, user_id: int) -> Player:
+async def _get_user_player_or_404(session: AsyncSession, user_id: int) -> Player:
     statement = select(Player).where(Player.user_id == user_id)
     result = await session.execute(statement)
     player = result.scalars().first()
