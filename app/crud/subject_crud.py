@@ -2,7 +2,7 @@ from fastapi import HTTPException, status
 from sqlmodel import select, exists
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import SQLAlchemyError
-from app.models import Player, Subject, Quest
+from app.models import Player, Subject, Quest, Material
 
 from app.schemas.subject_schema import SubjectRead, SubjectCreate, SubjectUpdate
 from app.schemas.quest_schema import QuestRead
@@ -20,6 +20,7 @@ class SubjectAlreadyExists(HTTPException):
 class SubjectNotBelongsToPlayer(HTTPException):
     def __init__(self, subject_id: int, player_id: int):
         super().__init__(status_code=404, detail=f"Subject {subject_id} does not belong to player {player_id}")
+
 
 async def crud_create_subject(session: AsyncSession, player_id: int, new_subject: SubjectCreate) -> SubjectRead:
     print(f"Creating subject for player_id: {player_id}")
@@ -156,3 +157,8 @@ def _serialize_subject(subject: Subject) -> SubjectRead:
         code_name=subject.code_name, description=subject.description, 
         difficulty=subject.difficulty
     )
+
+
+
+
+

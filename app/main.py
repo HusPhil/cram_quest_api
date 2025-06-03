@@ -16,9 +16,13 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:5173",  # ✅ Allow local frontend during development
+        "http://192.168.1.14:5173",  # ✅ Allow local frontend during development
         "http://192.168.1.3:5173",  # ✅ Allow local frontend during development
+        "http://192.168.8.78:5173",  # ✅ Allow local frontend during development
         "http://192.168.1.9:5173",  # ✅ Allow local frontend during development
         "http://192.168.1.10:5173",  # ✅ Allow local frontend during development
+        "http://192.168.87.111:5173",  # ✅ Allow local frontend during development
+        "http://172.16.202.198:5173",
     ],
     # allow_origins=["http://192.168.1.3:5173"],
     allow_credentials=True,
