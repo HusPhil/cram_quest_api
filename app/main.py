@@ -1,5 +1,4 @@
 from fastapi import FastAPI
-from contextlib import asynccontextmanager
 from app.core.database import create_db_and_tables
 from app.api.v1.endpoints import (
     user_routes, player_routes, 
@@ -38,7 +37,7 @@ async def on_startup():
 
 @app.get('/')
 async def root():
-    return {"message": "Server is running!"}
+    return {"message": "Welcome to cramquest!"}
 
 app.include_router(auth_routes.router, prefix="/auth", tags=["auth"])
 app.include_router(user_routes.router, prefix="/users", tags=["users"])
