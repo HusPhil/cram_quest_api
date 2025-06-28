@@ -10,7 +10,9 @@ if TYPE_CHECKING:
 
 class Subject(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    player_id: int = Field(sa_column=Column(ForeignKey("player.id", ondelete="CASCADE"), nullable=False))
+    player_id: int = Field(
+        sa_column=Column(ForeignKey("player.id", ondelete="CASCADE"), nullable=False)
+    )
 
     code_name: str = Field(sa_column=Column(String, nullable=False))
     description: str = Field(sa_column=Column(String, nullable=False))
@@ -18,5 +20,9 @@ class Subject(SQLModel, table=True):
 
     player: Optional["Player"] = Relationship(back_populates="subjects")
     study_sessions: List["StudySession"] = Relationship(back_populates="subject")
-    quests: List["Quest"] = Relationship(back_populates="subject", sa_relationship_kwargs={"cascade": "all, delete"})
-    materials: list["Material"] = Relationship(back_populates="subject", sa_relationship_kwargs={"cascade": "all, delete"})
+    quests: List["Quest"] = Relationship(
+        back_populates="subject", sa_relationship_kwargs={"cascade": "all, delete"}
+    )
+    materials: list["Material"] = Relationship(
+        back_populates="subject", sa_relationship_kwargs={"cascade": "all, delete"}
+    )

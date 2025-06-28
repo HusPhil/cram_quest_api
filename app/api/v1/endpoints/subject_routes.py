@@ -17,8 +17,8 @@ from app.crud.material_crud import (
 )
 
 
-router = APIRouter()
-# router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
+# router = APIRouter()
+router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 
 @router.post("/", response_model=SubjectRead)
 async def create_subject(player_id: int, subject_create: SubjectCreate, session: AsyncSession = Depends(get_session)):

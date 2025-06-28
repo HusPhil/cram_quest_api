@@ -8,7 +8,7 @@ from alembic import context
 from app.core.config import settings 
 from app.core.database import engine  # ✅ Import your database engine
 from sqlmodel import SQLModel
-from app.models import user_model, player_model, profile_model, subject_model, study_session_model, quest_model, material_model 
+from app.models import user_model, player_model, profile_model, subject_model, study_session_model, quest_model, material_model, task_model
 
 import asyncio
 # this is the Alembic Config object, which provides

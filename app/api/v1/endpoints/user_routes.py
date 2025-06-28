@@ -8,7 +8,7 @@ from app.core.auth import get_current_user
 from app.schemas.player_schema import PlayerRead
 
 
-router = APIRouter(dependencies=[Depends(get_session)])
+router = APIRouter(dependencies=[Depends(get_session), Depends(get_current_user)])
 # router = APIRouter()
  
 @router.post("/", response_model=UserRead)

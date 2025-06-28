@@ -5,3 +5,4 @@ from app.models.study_session_model import StudySession
 from app.models.subject_model import Subject
 from app.models.user_model import User
 from app.models.material_model import Material
+from app.models.task_model import Task

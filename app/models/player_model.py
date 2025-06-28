@@ -5,6 +5,7 @@ from enum import Enum
 if TYPE_CHECKING:
     from app.models import User, Profile, StudySession, Subject
 
+
 class PlayerTitle(str, Enum):
     NOVICE = "Novice"
     APPRENTICE = "Apprentice"
@@ -14,10 +15,16 @@ class PlayerTitle(str, Enum):
     ARCHMAGE = "Archmage"
     OMNISCIENT = "Omniscient"
 
+
 class Player(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(
-        sa_column=Column(ForeignKey("user.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+        sa_column=Column(
+            ForeignKey("user.id", ondelete="CASCADE"),
+            nullable=False,
+            unique=True,
+            index=True,
+        )
     )
     title: PlayerTitle = Field(
         sa_column=Column(String, nullable=False), default=PlayerTitle.NOVICE
@@ -25,7 +32,13 @@ class Player(SQLModel, table=True):
     level: int = Field(default=1)
     experience: int = Field(default=0)
 
-    study_sessions: list["StudySession"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})  # Use string-based reference
+    study_sessions: list["StudySession"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"}
+    )
     user: "User" = Relationship(back_populates="player")
-    profile: Optional["Profile"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})
-    subjects: list["Subject"] = Relationship(back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"})
+    profile: Optional["Profile"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"}
+    )
+    subjects: list["Subject"] = Relationship(
+        back_populates="player", sa_relationship_kwargs={"cascade": "all, delete"}
+    )

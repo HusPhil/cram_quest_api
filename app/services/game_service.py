@@ -3,30 +3,44 @@ from app.models.study_session_model import SessionStatus
 from app.models import Player, StudySession, Quest
 from sqlmodel import Session
 
+
 class GameService:
     BASE_XP = 100  # Minimum XP needed for level-up
     INCREMENT = 50  # Small bonus per level
     MULTIPLIER = 20  # Controls exponential growth
     COMPLETION_BONUS = 30  # Extra XP for completing a session
-    DEFEAT_PENALTY = 0.5   # Reduce XP by 50% if Defeat
-    CANCELED_PENALTY = 0   # No XP for Canceled session
+    DEFEAT_PENALTY = 0.5  # Reduce XP by 50% if Defeat
+    CANCELED_PENALTY = 0  # No XP for Canceled session
 
     @staticmethod
-    def calculate_xp(study_session: StudySession, accomplished_quests: list[Quest], total_selected_quests: int, session_status: SessionStatus) -> int:
+    def calculate_xp(
+        study_session: StudySession,
+        accomplished_quest: Quest,
+        total_selected_quests: int,
+        session_status: SessionStatus,
+    ) -> int:
         """Calculate XP based on accomplished quests and session result."""
 
         if not study_session.end_time:
             study_session.end_time = datetime.now(timezone.utc)
 
         # ✅ Get session duration in minutes
-        duration_minutes = (study_session.end_time - study_session.start_time).total_seconds() / 60
-        expected_duration_minutes = (total_selected_quests * 5)  # Assume ~5 mins per quest
+        duration_minutes = (
+            study_session.end_time - study_session.start_time
+        ).total_seconds() / 60
+        expected_duration_minutes = (
+            total_selected_quests * 5
+        )  # Assume ~5 mins per quest
 
         # ✅ Base XP from accomplished quest difficulty
-        base_xp = sum(GameService.BASE_XP + (quest.difficulty * 5) for quest in accomplished_quests)
+        base_xp = GameService.BASE_XP + (accomplished_quest.difficulty * 5)
 
         # ✅ Efficiency bonus if finished faster
-        efficiency_bonus = GameService.COMPLETION_BONUS if duration_minutes < expected_duration_minutes else 0
+        efficiency_bonus = (
+            GameService.COMPLETION_BONUS
+            if duration_minutes < expected_duration_minutes
+            else 0
+        )
 
         # ✅ Apply XP multipliers based on outcome
         if session_status == SessionStatus.COMPLETED:
@@ -41,4 +55,8 @@ class GameService:
     @staticmethod
     def next_level_xp(level: int) -> int:
         """Calculate XP required to reach the next level."""
-        return int(GameService.BASE_XP + (level * GameService.INCREMENT) + (level ** 1.5 * GameService.MULTIPLIER))
+        return int(
+            GameService.BASE_XP
+            + (level * GameService.INCREMENT)
+            + (level**1.5 * GameService.MULTIPLIER)
+        )
